@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/login_screen.dart';
-import 'firebase_options.dart';  // Asegúrate de que este archivo esté presente
+import './widgets/AuthWrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,  // Configuración de Firebase según la plataforma
-  );
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
@@ -15,10 +12,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Seguimiento Construcción',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: LoginScreen(),
       debugShowCheckedModeBanner: false,
+      title: 'Tu App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: AuthWrapper(), // 👈 Aquí usas el AuthWrapper
     );
   }
 }
+
