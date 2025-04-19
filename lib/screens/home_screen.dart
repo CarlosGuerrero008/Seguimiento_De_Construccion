@@ -61,19 +61,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadProfileImage() async {
-    if (user == null) return;
-    try {
-      final imageBytes = await _imageService.getImage(user!.uid);
-      if (imageBytes != null) {
-        setState(() {
-          _profileImageBytes = imageBytes;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error cargando imagen: $e');
-    }
+  if (user == null) return;
+  
+  try {
+    // Recargar el usuario actual para obtener los últimos datos
+    await user?.reload();
+    final currentUser = FirebaseAuth.instance.currentUser;
+    
+    // Cargar imagen
+    final imageBytes = await _imageService.getImage(user!.uid);
+    
+    setState(() {
+      _profileImageBytes = imageBytes;
+    });
+  } catch (e) {
+    debugPrint('Error cargando imagen y datos de usuario: $e');
   }
-
+}
   Future<void> _saveThemePreference(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkMode', value);
@@ -95,13 +99,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String getUserName() {
-    if (user?.displayName != null && user!.displayName!.isNotEmpty) {
-      return user!.displayName!;
-    } else if (user?.email != null) {
-      return user!.email!.split('@')[0];
-    }
-    return 'Usuario';
+  final currentUser = FirebaseAuth.instance.currentUser;
+  if (currentUser?.displayName != null && currentUser!.displayName!.isNotEmpty) {
+    return currentUser.displayName!;
+  } else if (currentUser?.email != null) {
+    return currentUser!.email!.split('@')[0];
   }
+  return 'Usuario';
+}
 
   void _showProfilePanel(BuildContext context) {
     _removeOverlay();
@@ -173,14 +178,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         onTap: () {
                           _removeOverlay();
                           Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => EditProfileScreen()),
-                          ).then((updated) {
-                            if (updated == true) {
-                              _loadProfileImage(); // Recargar imagen si hubo cambios
-                            }
-                          });
+                                  context,
+                                  MaterialPageRoute(builder: (context) => EditProfileScreen()),
+                                ).then((updated) {
+                                if (updated == true) {
+                                  _loadProfileImage(); // Recargar imagen
+                                  setState(() {}); // Forzar reconstrucción del widget
+                                }
+                            });
                         },
                       ),
                       Divider(height: 1),

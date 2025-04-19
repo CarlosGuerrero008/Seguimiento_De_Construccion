@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import '../widgets/image_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EditProfileScreen extends StatefulWidget {
   @override
@@ -179,13 +180,23 @@ Future<void> _updateProfile() async {
       await user?.updateDisplayName(_nameController.text);
       await user?.reload();
       newName = _nameController.text;
+      
+      // 3. Actualizar también en la colección 'users' de Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .update({
+            'username': _nameController.text,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Perfil actualizado correctamente')),
     );
     
-    Navigator.pop(context, newName); // Devuelve el nuevo nombre
+    // Aquí es donde debes colocar el pop(true) - cuando todo ha sido exitoso
+    Navigator.of(context).pop(true); // Devuelve 'true' indicando que hubo cambios
   } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Error al actualizar perfil: ${e.toString()}')),
