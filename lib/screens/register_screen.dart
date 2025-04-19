@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Importa Cloud Firestore
 import 'login_screen.dart';
 import 'home_screen.dart';
 
@@ -14,7 +15,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _emailSent = false;
   bool _obscurePassword = true;
@@ -37,9 +38,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  Future<void> createUserDocument(User? user) async {
+    if (user != null && user.email != null) {
+      try {
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'email': user.email,
+          'username': usernameController.text.trim(), // Guardar el nombre de usuario también
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        print('Documento de usuario creado en Firestore con ID: ${user.uid}');
+      } catch (e) {
+        print('Error al crear el documento de usuario en Firestore: $e');
+      }
+    }
+  }
+
   Future<void> register() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() {
       _isLoading = true;
       _emailSent = false;
@@ -48,13 +64,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       final UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
-            email: emailController.text.trim(),
-            password: passwordController.text.trim(),
-          );
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
 
       // Actualizar el nombre de usuario
       await userCredential.user?.updateDisplayName(usernameController.text.trim());
-      
+
+      // *** LLAMADA A LA FUNCIÓN PARA CREAR EL DOCUMENTO EN FIRESTORE ***
+      await createUserDocument(userCredential.user);
+
       // Enviar correo de verificación
       await _sendVerificationEmail(userCredential.user!);
 
