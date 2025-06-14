@@ -43,7 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       try {
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'email': user.email,
-          'username': usernameController.text.trim(), // Guardar el nombre de usuario también
+          'username': usernameController.text.trim(),
           'createdAt': FieldValue.serverTimestamp(),
         });
         print('Documento de usuario creado en Firestore con ID: ${user.uid}');
@@ -68,16 +68,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: passwordController.text.trim(),
       );
 
-      // Actualizar el nombre de usuario
-      await userCredential.user?.updateDisplayName(usernameController.text.trim());
+      await userCredential.user
+          ?.updateDisplayName(usernameController.text.trim());
 
-      // *** LLAMADA A LA FUNCIÓN PARA CREAR EL DOCUMENTO EN FIRESTORE ***
       await createUserDocument(userCredential.user);
 
-      // Enviar correo de verificación
       await _sendVerificationEmail(userCredential.user!);
 
-      // Mostrar diálogo de éxito
       _showVerificationDialog();
 
     } on FirebaseAuthException catch (e) {
@@ -184,6 +181,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 SizedBox(height: 20),
                 TextFormField(
+                  key: Key('usernameField'),
                   controller: usernameController,
                   decoration: InputDecoration(
                     labelText: "NOMBRE DE USUARIO",
@@ -202,6 +200,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 SizedBox(height: 20),
                 TextFormField(
+                  key: Key('emailField'),
                   controller: emailController,
                   decoration: InputDecoration(
                     labelText: "CORREO ELECTRÓNICO",
@@ -213,7 +212,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Por favor ingresa tu correo';
                     }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}\$').hasMatch(value)) {
                       return 'Ingresa un correo válido';
                     }
                     return null;
@@ -221,6 +220,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 SizedBox(height: 20),
                 TextFormField(
+                  key: Key('passwordField'),
                   controller: passwordController,
                   decoration: InputDecoration(
                     labelText: "CONTRASEÑA",
@@ -248,6 +248,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 SizedBox(height: 20),
                 TextFormField(
+                  key: Key('confirmPasswordField'),
                   controller: confirmPasswordController,
                   decoration: InputDecoration(
                     labelText: "CONFIRMAR CONTRASEÑA",
@@ -272,6 +273,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 SizedBox(height: 30),
                 ElevatedButton(
+                  key: Key('registerButton'),
                   onPressed: _isLoading ? null : register,
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 16),
@@ -309,6 +311,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
                 SizedBox(height: 20),
                 TextButton(
+                  key: Key('toLoginButton'),
                   onPressed: () => Navigator.pop(context),
                   child: Text.rich(
                     TextSpan(
