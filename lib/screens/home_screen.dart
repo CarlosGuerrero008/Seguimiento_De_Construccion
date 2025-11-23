@@ -6,6 +6,8 @@ import 'login_screen.dart';
 import 'edit_profile_screen.dart';
 import '../widgets/image_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:percent_indicator/percent_indicator.dart';
+import 'section_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -149,7 +151,6 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       // Recargar el usuario actual para obtener los últimos datos
       await user?.reload();
-      final currentUser = FirebaseAuth.instance.currentUser;
 
       // Cargar imagen
       final imageBytes = await _imageService.getImage(user!.uid);
@@ -310,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
 
-    Overlay.of(context)?.insert(_profileOverlayEntry!);
+    Overlay.of(context).insert(_profileOverlayEntry!);
   }
 
   void _showDeleteConfirmationDialog(Map<String, dynamic> projectData) {
@@ -638,7 +639,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Colors.white,
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -655,7 +656,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.blueGrey[800],
         foregroundColor: Colors.white,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Colors.grey[800],
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1042,6 +1043,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     : "No especificada",
               ),
               SizedBox(height: 32),
+              // NUEVA SECCIÓN: Progreso General del Proyecto
+              _buildProgressSection(),
+              SizedBox(height: 24),
+              // NUEVA SECCIÓN: Secciones de la Obra
+              _buildProjectSections(),
+              SizedBox(height: 32),
               Center(
                 child: ElevatedButton(
                   onPressed: () {},
@@ -1218,6 +1225,311 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       );
+    }
+  }
+
+  // M\u00e9todos para gesti\u00f3n de secciones del proyecto
+  Widget _buildProgressSection() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('projectSections')
+          .where('projectId', isEqualTo: selectedProject)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return SizedBox.shrink();
+        
+        double totalProgress = 0;
+        int sectionCount = snapshot.data!.docs.length;
+        
+        if (sectionCount > 0) {
+          for (var doc in snapshot.data!.docs) {
+            totalProgress += (doc.data() as Map<String, dynamic>)['progressPercentage'] ?? 0;
+          }
+          totalProgress = totalProgress / sectionCount;
+        }
+        
+        return Card(
+          elevation: 4,
+          margin: EdgeInsets.symmetric(horizontal: 16),
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Progreso General',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 16),
+                LinearPercentIndicator(
+                  lineHeight: 20.0,
+                  percent: totalProgress / 100,
+                  center: Text(
+                    '${totalProgress.toStringAsFixed(1)}%',
+                    style: TextStyle(fontSize: 12, color: Colors.white),
+                  ),
+                  backgroundColor: Colors.grey[300],
+                  progressColor: totalProgress < 30 ? Colors.red :
+                               totalProgress < 70 ? Colors.orange : Colors.green,
+                  barRadius: Radius.circular(10),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  sectionCount > 0 
+                    ? '$sectionCount ${sectionCount == 1 ? "secci\u00f3n" : "secciones"}'
+                    : 'Sin secciones a\u00fan',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProjectSections() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Secciones de la Obra',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                icon: Icon(Icons.add_circle, color: Colors.blue, size: 32),
+                onPressed: _showCreateSectionDialog,
+                tooltip: 'Agregar secci\u00f3n',
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 8),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('projectSections')
+              .where('projectId', isEqualTo: selectedProject)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('Error: ${snapshot.error}'),
+              );
+            }
+            
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.construction, size: 48, color: Colors.grey),
+                      SizedBox(height: 8),
+                      Text(
+                        'No hay secciones creadas a\u00fan.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Presiona + para agregar una',
+                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            
+            // Ordenar las secciones manualmente por createdAt
+            final sections = snapshot.data!.docs;
+            sections.sort((a, b) {
+              final aData = a.data() as Map<String, dynamic>;
+              final bData = b.data() as Map<String, dynamic>;
+              final aTime = (aData['createdAt'] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+              final bTime = (bData['createdAt'] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+              return aTime.compareTo(bTime);
+            });
+            
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: sections.length,
+              itemBuilder: (context, index) {
+                final doc = sections[index];
+                final data = doc.data() as Map<String, dynamic>;
+                
+                return _buildSectionCard(doc.id, data);
+              },
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionCard(String sectionId, Map<String, dynamic> data) {
+    double progress = (data['progressPercentage'] ?? 0).toDouble();
+    
+    return Card(
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 2,
+      child: InkWell(
+        onTap: () => _navigateToSectionDetails(sectionId, data),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      data['name'] ?? 'Sin nombre',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: progress < 30 ? Colors.red.withOpacity(0.2) :
+                             progress < 70 ? Colors.orange.withOpacity(0.2) : 
+                             Colors.green.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${progress.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: progress < 30 ? Colors.red :
+                               progress < 70 ? Colors.orange : Colors.green,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (data['description'] != null && data['description'].toString().isNotEmpty) ...[
+                SizedBox(height: 8),
+                Text(
+                  data['description'] ?? '',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              SizedBox(height: 12),
+              LinearPercentIndicator(
+                lineHeight: 8.0,
+                percent: progress / 100,
+                backgroundColor: Colors.grey[300],
+                progressColor: progress < 30 ? Colors.red :
+                             progress < 70 ? Colors.orange : Colors.green,
+                barRadius: Radius.circular(10),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCreateSectionDialog() {
+    final nameController = TextEditingController();
+    final descriptionController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Crear Nueva Secci\u00f3n'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: 'Nombre de la secci\u00f3n',
+                  hintText: 'Ej: Cimentaci\u00f3n, Estructura, Acabados',
+                  border: OutlineInputBorder(),
+                ),
+                textCapitalization: TextCapitalization.words,
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: descriptionController,
+                decoration: InputDecoration(
+                  labelText: 'Descripci\u00f3n (opcional)',
+                  hintText: 'Detalles sobre esta secci\u00f3n',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Por favor ingresa un nombre')),
+                );
+                return;
+              }
+              
+              try {
+                await FirebaseFirestore.instance.collection('projectSections').add({
+                  'projectId': selectedProject,
+                  'name': nameController.text.trim(),
+                  'description': descriptionController.text.trim(),
+                  'progressPercentage': 0.0,
+                  'createdAt': FieldValue.serverTimestamp(),
+                  'lastUpdated': null,
+                });
+                
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Secci\u00f3n creada exitosamente')),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error al crear secci\u00f3n: $e')),
+                );
+              }
+            },
+            child: Text('Crear'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToSectionDetails(String sectionId, Map<String, dynamic> data) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SectionDetailsScreen(
+          sectionId: sectionId,
+          sectionData: data,
+          projectId: selectedProject!,
+        ),
+      ),
+    );
+    
+    // Si se actualizó algo, recargar la vista
+    if (result == true) {
+      setState(() {});
     }
   }
 }
