@@ -1,8 +1,74 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Regla para imágenes de perfil de usuario
     match /user_images/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Regla para colección de usuarios
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Regla para proyectos
+    match /projects/{projectId} {
+      allow read: if request.auth != null && 
+                     exists(/databases/$(database)/documents/projectUsers/$(request.auth.uid + '_' + projectId));
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && 
+                               resource.data.adminId == request.auth.uid;
+    }
+    
+    // Regla para relación usuarios-proyectos
+    match /projectUsers/{userProjectId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow delete: if request.auth != null && 
+                       get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.adminId == request.auth.uid;
+    }
+    
+    // Regla para invitaciones
+    match /invitations/{invitationId} {
+      allow read: if request.auth != null && 
+                     (resource.data.userId == request.auth.uid || 
+                      resource.data.invitedBy == request.auth.uid);
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && 
+                       (resource.data.invitedBy == request.auth.uid || 
+                        resource.data.userId == request.auth.uid);
+    }
+    
+    // Regla para secciones de proyecto
+    match /projectSections/{sectionId} {
+      allow read: if request.auth != null && 
+                     exists(/databases/$(database)/documents/projectUsers/$(request.auth.uid + '_' + resource.data.projectId));
+      allow create, update: if request.auth != null;
+      allow delete: if request.auth != null && 
+                       get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.adminId == request.auth.uid;
+    }
+    
+    // Regla para reportes diarios
+    match /dailyReports/{reportId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && 
+                               resource.data.contractorId == request.auth.uid;
+    }
+    
+    // Regla para documentos del proyecto
+    match /projectDocuments/{documentId} {
+      allow read: if request.auth != null && 
+                     exists(/databases/$(database)/documents/projectUsers/$(request.auth.uid + '_' + resource.data.projectId));
+      allow create: if request.auth != null && 
+                       request.resource.data.fileSize <= 5242880;  // Límite de 5MB
+      allow update: if request.auth != null && 
+                       resource.data.uploadedBy == request.auth.uid;
+      allow delete: if request.auth != null && 
+                       (resource.data.uploadedBy == request.auth.uid || 
+                        get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.adminId == request.auth.uid);
     }
   }
 }
