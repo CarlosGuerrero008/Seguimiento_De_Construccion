@@ -14,6 +14,10 @@ import '../widgets/invitation_list_panel.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
+import '../widgets/project_card.dart';
+import '../widgets/section_card.dart';
+import '../widgets/progress_section.dart';
+import '../widgets/delete_project_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -320,131 +324,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     Overlay.of(context).insert(_profileOverlayEntry!);
-  }
-
-  void _showDeleteConfirmationDialog(Map<String, dynamic> projectData) {
-    final confirmController = TextEditingController();
-    final projectName = projectData['name'] ?? '';
-    bool canDelete = false;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Row(
-                children: [
-                  Icon(Icons.warning_amber_rounded, color: Colors.red, size: 30),
-                  SizedBox(width: 8),
-                  Expanded(child: Text('Eliminar Proyecto')),
-                ],
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Esta acción eliminará permanentemente el proyecto:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 8),
-                    Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.red[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red[200]!),
-                      ),
-                      child: Text(
-                        projectName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Esto eliminará:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 8),
-                    Text('• Todas las secciones del proyecto'),
-                    Text('• Todos los reportes diarios'),
-                    Text('• Todas las invitaciones'),
-                    Text('• Todo el historial de actualizaciones'),
-                    SizedBox(height: 16),
-                    Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.orange[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.orange[300]!),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline, color: Colors.orange[800]),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Esta acción no se puede deshacer',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.orange[900],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Para confirmar, escribe el nombre del proyecto:',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                    SizedBox(height: 8),
-                    TextField(
-                      controller: confirmController,
-                      decoration: InputDecoration(
-                        hintText: projectName,
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.edit),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          canDelete = value.trim() == projectName;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text('Cancelar'),
-                ),
-                ElevatedButton(
-                  onPressed: canDelete
-                      ? () async {
-                          Navigator.of(context).pop();
-                          await _deleteProject(projectData);
-                        }
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: Text('Eliminar Proyecto'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
   }
 
   void _showProjectDetailsDialog(Map<String, dynamic> projectData) {
@@ -885,9 +764,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         final projectData =
                             projectSnapshot.data!.data()
                                 as Map<String, dynamic>;
-                        return _buildProjectCard(
-                          projectData['name'],
-                          projectId,
+                        return ProjectCard(
+                          projectName: projectData['name'],
+                          projectId: projectId,
+                          onTap: () {
+                            setState(() {
+                              selectedProject = projectId;
+                              showProjectDetails = true;
+                            });
+                          },
                         );
                       },
                     );
@@ -899,29 +784,6 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildProjectCard(String projectName, String projectId) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: () {
-          setState(() {
-            selectedProject = projectId; //  Guardar el ID
-            showProjectDetails = true;
-          });
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            projectName,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
       ),
     );
   }
@@ -1269,7 +1131,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   user?.uid) // Solo muestra si es el administrador
                 IconButton(
                   icon: Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _showDeleteConfirmationDialog(projectData),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => DeleteProjectDialog(
+                        projectData: projectData,
+                        onDelete: _deleteProject,
+                      ),
+                    );
+                  },
                 ),
             ],
           ),
@@ -1325,7 +1195,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SizedBox(height: 32),
               // NUEVA SECCIÓN: Progreso General del Proyecto
-              _buildProgressSection(),
+              ProgressSection(projectId: selectedProject!),
               SizedBox(height: 24),
               // NUEVA SECCIÓN: Secciones de la Obra
               _buildProjectSections(),
@@ -1621,79 +1491,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 final doc = sections[index];
                 final data = doc.data() as Map<String, dynamic>;
                 
-                return _buildSectionCard(doc.id, data);
+                return SectionCard(
+                  sectionId: doc.id,
+                  data: data,
+                  onTap: () => _navigateToSectionDetails(doc.id, data),
+                );
               },
             );
           },
         ),
       ],
-    );
-  }
-
-  Widget _buildSectionCard(String sectionId, Map<String, dynamic> data) {
-    double progress = (data['progressPercentage'] ?? 0).toDouble();
-    
-    return Card(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      child: InkWell(
-        onTap: () => _navigateToSectionDetails(sectionId, data),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      data['name'] ?? 'Sin nombre',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: progress < 30 ? Colors.red.withOpacity(0.2) :
-                             progress < 70 ? Colors.orange.withOpacity(0.2) : 
-                             Colors.green.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${progress.toStringAsFixed(1)}%',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: progress < 30 ? Colors.red :
-                               progress < 70 ? Colors.orange : Colors.green,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (data['description'] != null && data['description'].toString().isNotEmpty) ...[
-                SizedBox(height: 8),
-                Text(
-                  data['description'] ?? '',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              SizedBox(height: 12),
-              LinearPercentIndicator(
-                lineHeight: 8.0,
-                percent: progress / 100,
-                backgroundColor: Colors.grey[300],
-                progressColor: progress < 30 ? Colors.red :
-                             progress < 70 ? Colors.orange : Colors.green,
-                barRadius: Radius.circular(10),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
