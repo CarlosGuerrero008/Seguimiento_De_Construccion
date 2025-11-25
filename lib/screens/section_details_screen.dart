@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:convert';
@@ -422,7 +421,6 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
     final descriptionController = TextEditingController();
     final progressController = TextEditingController();
     List<File> selectedImages = [];
-    Position? currentPosition;
 
     showDialog(
       context: context,
@@ -482,33 +480,6 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
                   SizedBox(height: 8),
                   Text('${selectedImages.length} foto(s) seleccionada(s)'),
                 ],
-                SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () async {
-                    try {
-                      final position = await _getCurrentLocation();
-                      setState(() {
-                        currentPosition = position;
-                      });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Ubicación obtenida')),
-                      );
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error al obtener ubicación: $e')),
-                      );
-                    }
-                  },
-                  icon: Icon(Icons.location_on),
-                  label: Text(
-                    currentPosition != null 
-                      ? 'Ubicación obtenida ✓' 
-                      : 'Obtener ubicación GPS'
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: currentPosition != null ? Colors.green : null,
-                  ),
-                ),
               ],
             ),
           ),
@@ -539,7 +510,6 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
                   descriptionController.text.trim(),
                   progressValue,
                   selectedImages,
-                  currentPosition,
                 );
               },
               child: Text('Guardar'),
@@ -550,35 +520,10 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
     );
   }
 
-  Future<Position> _getCurrentLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      throw Exception('Los servicios de ubicación están deshabilitados');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        throw Exception('Permisos de ubicación denegados');
-      }
-    }
-    
-    if (permission == LocationPermission.deniedForever) {
-      throw Exception('Permisos de ubicación denegados permanentemente');
-    }
-
-    return await Geolocator.getCurrentPosition();
-  }
-
   Future<void> _createReport(
     String description,
     double progressAdded,
     List<File> images,
-    Position? position,
   ) async {
     try {
       // Mostrar indicador de carga
@@ -635,8 +580,6 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
         'date': FieldValue.serverTimestamp(),
         'description': description,
         'photosBase64': photoBase64List, // Guardamos Base64 en lugar de URLs
-        'latitude': position?.latitude ?? 0.0,
-        'longitude': position?.longitude ?? 0.0,
         'contractorId': user!.uid,
         'contractorName': contractorName,
         'progressAdded': progressAdded,
@@ -652,6 +595,23 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
           .update({
         'progressPercentage': newProgress,
         'lastUpdated': FieldValue.serverTimestamp(),
+      });
+
+      // Registrar actualización en el historial del proyecto
+      await FirebaseFirestore.instance
+          .collection('projects')
+          .doc(widget.projectId)
+          .update({
+        'updateHistory': FieldValue.arrayUnion([
+          {
+            'timestamp': FieldValue.serverTimestamp(),
+            'description': 'Reporte agregado en ${widget.sectionData['name']}: $description',
+            'userName': contractorName,
+            'type': 'report',
+            'sectionId': widget.sectionId,
+            'progressAdded': progressAdded,
+          }
+        ]),
       });
 
       // Cerrar indicador de carga

@@ -11,6 +11,9 @@ import 'section_details_screen.dart';
 import '../widgets/profile_option.dart';
 import '../widgets/detail_item.dart';
 import '../widgets/invitation_list_panel.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -320,27 +323,335 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showDeleteConfirmationDialog(Map<String, dynamic> projectData) {
+    final confirmController = TextEditingController();
+    final projectName = projectData['name'] ?? '';
+    bool canDelete = false;
+
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text('Confirmar eliminación'),
-          content: Text(
-            '¿Estás seguro de que deseas eliminar el proyecto "${projectData['name']}"? Esta acción no se puede deshacer.',
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: Colors.red, size: 30),
+                  SizedBox(width: 8),
+                  Expanded(child: Text('Eliminar Proyecto')),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Esta acción eliminará permanentemente el proyecto:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 8),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red[200]!),
+                      ),
+                      child: Text(
+                        projectName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Esto eliminará:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 8),
+                    Text('• Todas las secciones del proyecto'),
+                    Text('• Todos los reportes diarios'),
+                    Text('• Todas las invitaciones'),
+                    Text('• Todo el historial de actualizaciones'),
+                    SizedBox(height: 16),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange[300]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.orange[800]),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Esta acción no se puede deshacer',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange[900],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Para confirmar, escribe el nombre del proyecto:',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    SizedBox(height: 8),
+                    TextField(
+                      controller: confirmController,
+                      decoration: InputDecoration(
+                        hintText: projectName,
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.edit),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          canDelete = value.trim() == projectName;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: canDelete
+                      ? () async {
+                          Navigator.of(context).pop();
+                          await _deleteProject(projectData);
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text('Eliminar Proyecto'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showProjectDetailsDialog(Map<String, dynamic> projectData) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9,
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Encabezado
+                Container(
+                  padding: EdgeInsets.all(16),
+                  color: isDarkMode ? Colors.blueGrey[800] : Colors.blue,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Detalles del Proyecto',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+                // Contenido
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Información básica
+                        Text(
+                          projectData['name'] ?? 'Sin nombre',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        
+                        // Ubicación GPS
+                        if (projectData['latitude'] != null && projectData['longitude'] != null) ...[
+                          Container(
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.location_on, color: Colors.red),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Ubicación de la Obra',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 8),
+                                Text('Latitud: ${projectData['latitude']}'),
+                                Text('Longitud: ${projectData['longitude']}'),
+                                if (projectData['locationAddress'] != null)
+                                  Padding(
+                                    padding: EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      'Dirección: ${projectData['locationAddress']}',
+                                      style: TextStyle(fontStyle: FontStyle.italic),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                        ],
+                        
+                        // Historial de Actualizaciones
+                        Text(
+                          'Historial de Actualizaciones',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        StreamBuilder<DocumentSnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('projects')
+                              .doc(selectedProject)
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return Center(child: CircularProgressIndicator());
+                            }
+                            
+                            var data = snapshot.data!.data() as Map<String, dynamic>?;
+                            List<dynamic> updateHistory = data?['updateHistory'] ?? [];
+                            
+                            if (updateHistory.isEmpty) {
+                              return Container(
+                                padding: EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.info_outline, color: Colors.grey),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        'No hay actualizaciones registradas',
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                            
+                            return Column(
+                              children: updateHistory.reversed.take(10).map((update) {
+                                DateTime timestamp = (update['timestamp'] as Timestamp).toDate();
+                                String formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(timestamp);
+                                
+                                return Container(
+                                  margin: EdgeInsets.only(bottom: 8),
+                                  padding: EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: isDarkMode ? Colors.grey[800] : Colors.grey[50],
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        Icons.access_time,
+                                        size: 16,
+                                        color: Colors.blue,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              formattedDate,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                            SizedBox(height: 4),
+                                            Text(
+                                              update['description'] ?? 'Actualización',
+                                              style: TextStyle(fontSize: 14),
+                                            ),
+                                            if (update['userName'] != null)
+                                              Padding(
+                                                padding: EdgeInsets.only(top: 4),
+                                                child: Text(
+                                                  'Por: ${update['userName']}',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.grey[600],
+                                                    fontStyle: FontStyle.italic,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await _deleteProject(projectData);
-              },
-              child: Text('Eliminar', style: TextStyle(color: Colors.red)),
-            ),
-          ],
         );
       },
     );
@@ -620,6 +931,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final _projectDescriptionController = TextEditingController();
     final _projectTypeController = TextEditingController();
     final _workersController = TextEditingController();
+    final _latitudeController = TextEditingController();
+    final _longitudeController = TextEditingController();
+    String _locationAddress = '';
     DateTime _startDate = DateTime.now();
     DateTime _endDate = DateTime.now().add(
       Duration(days: 30),
@@ -717,6 +1031,121 @@ class _HomeScreenState extends State<HomeScreen> {
                         }
                       },
                     ),
+                    SizedBox(height: 16),
+                    Divider(),
+                    Text(
+                      'Ubicación de la Obra',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _latitudeController,
+                            decoration: InputDecoration(
+                              labelText: 'Latitud',
+                              hintText: 'Ej: -12.0464',
+                            ),
+                            keyboardType: TextInputType.numberWithOptions(decimal: true),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _longitudeController,
+                            decoration: InputDecoration(
+                              labelText: 'Longitud',
+                              hintText: 'Ej: -77.0428',
+                            ),
+                            keyboardType: TextInputType.numberWithOptions(decimal: true),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        try {
+                          bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+                          if (!serviceEnabled) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Los servicios de ubicación están deshabilitados')),
+                            );
+                            return;
+                          }
+
+                          LocationPermission permission = await Geolocator.checkPermission();
+                          if (permission == LocationPermission.denied) {
+                            permission = await Geolocator.requestPermission();
+                            if (permission == LocationPermission.denied) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Permiso de ubicación denegado')),
+                              );
+                              return;
+                            }
+                          }
+
+                          if (permission == LocationPermission.deniedForever) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Los permisos de ubicación están permanentemente denegados')),
+                            );
+                            return;
+                          }
+
+                          Position position = await Geolocator.getCurrentPosition(
+                            desiredAccuracy: LocationAccuracy.high,
+                          );
+
+                          setState(() {
+                            _latitudeController.text = position.latitude.toStringAsFixed(6);
+                            _longitudeController.text = position.longitude.toStringAsFixed(6);
+                          });
+
+                          // Obtener dirección
+                          try {
+                            List<Placemark> placemarks = await placemarkFromCoordinates(
+                              position.latitude,
+                              position.longitude,
+                            );
+                            if (placemarks.isNotEmpty) {
+                              Placemark place = placemarks[0];
+                              setState(() {
+                                _locationAddress = '${place.street}, ${place.locality}, ${place.country}';
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Ubicación obtenida: $_locationAddress')),
+                              );
+                            }
+                          } catch (e) {
+                            print('Error al obtener dirección: $e');
+                          }
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error al obtener ubicación: $e')),
+                          );
+                        }
+                      },
+                      icon: Icon(Icons.my_location),
+                      label: Text('Obtener Ubicación Actual'),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size(double.infinity, 40),
+                      ),
+                    ),
+                    if (_locationAddress.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: Text(
+                          'Dirección: $_locationAddress',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ),
                   ],
                 );
               },
@@ -742,6 +1171,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     projectType.isNotEmpty &&
                     workers.isNotEmpty) {
                   try {
+                    // Validar y preparar coordenadas GPS
+                    double? latitude;
+                    double? longitude;
+                    if (_latitudeController.text.isNotEmpty && _longitudeController.text.isNotEmpty) {
+                      try {
+                        latitude = double.parse(_latitudeController.text);
+                        longitude = double.parse(_longitudeController.text);
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Coordenadas GPS inválidas')),
+                        );
+                        return;
+                      }
+                    }
+
                     //  1. Crear el proyecto en Firestore
                     final newProjectRef = await FirebaseFirestore.instance
                         .collection('projects')
@@ -754,6 +1198,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           'endDate': _endDate,
                           'adminId': user!.uid,
                           'createdAt': FieldValue.serverTimestamp(),
+                          'latitude': latitude,
+                          'longitude': longitude,
+                          'locationAddress': _locationAddress.isNotEmpty ? _locationAddress : null,
+                          'updateHistory': [],
                         });
 
                     final newProjectId = newProjectRef.id;
@@ -884,7 +1332,7 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(height: 32),
               Center(
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () => _showProjectDetailsDialog(projectData),
                   style: ElevatedButton.styleFrom(
                     minimumSize: Size(200, 50),
                     backgroundColor:
