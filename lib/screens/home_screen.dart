@@ -18,8 +18,11 @@ import '../widgets/project_card.dart';
 import '../widgets/section_card.dart';
 import '../widgets/progress_section.dart';
 import '../widgets/delete_project_dialog.dart';
+import 'project_documents_screen.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -241,14 +244,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   _profileImageBytes != null
                                       ? MemoryImage(_profileImageBytes!)
                                       : null,
-                              child:
-                                  _profileImageBytes == null
-                                      ? Icon(Icons.person, size: 30)
-                                      : null,
                               backgroundColor:
                                   isDarkMode
                                       ? Colors.blueGrey[700]
                                       : Colors.blue.shade100,
+                              child:
+                                  _profileImageBytes == null
+                                      ? Icon(Icons.person, size: 30)
+                                      : null,
                             ),
                             SizedBox(width: 16),
                             Column(
@@ -615,12 +618,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       _profileImageBytes != null
                           ? MemoryImage(_profileImageBytes!)
                           : null,
+                  backgroundColor:
+                      isDarkMode ? Colors.blueGrey[700] : Colors.blue.shade100,
                   child:
                       _profileImageBytes == null
                           ? Icon(Icons.person, size: 18)
                           : null,
-                  backgroundColor:
-                      isDarkMode ? Colors.blueGrey[700] : Colors.blue.shade100,
                 ),
               ),
             ),
@@ -789,15 +792,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showCreateProjectDialog() {
-    final _projectNameController = TextEditingController();
-    final _projectDescriptionController = TextEditingController();
-    final _projectTypeController = TextEditingController();
-    final _workersController = TextEditingController();
-    final _latitudeController = TextEditingController();
-    final _longitudeController = TextEditingController();
-    String _locationAddress = '';
-    DateTime _startDate = DateTime.now();
-    DateTime _endDate = DateTime.now().add(
+    final projectNameController = TextEditingController();
+    final projectDescriptionController = TextEditingController();
+    final projectTypeController = TextEditingController();
+    final workersController = TextEditingController();
+    final latitudeController = TextEditingController();
+    final longitudeController = TextEditingController();
+    String locationAddress = '';
+    DateTime startDate = DateTime.now();
+    DateTime endDate = DateTime.now().add(
       Duration(days: 30),
     ); //  Fecha prevista por defecto
 
@@ -814,21 +817,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
-                      controller: _projectNameController,
+                      controller: projectNameController,
                       decoration: InputDecoration(
                         labelText: 'Nombre del Proyecto',
                       ),
                     ),
                     TextField(
-                      controller: _projectDescriptionController,
+                      controller: projectDescriptionController,
                       decoration: InputDecoration(
                         labelText: 'Descripción del Proyecto',
                       ),
                     ),
                     DropdownButtonFormField<String>(
-                      value:
-                          _projectTypeController.text.isNotEmpty
-                              ? _projectTypeController.text
+                      initialValue:
+                          projectTypeController.text.isNotEmpty
+                              ? projectTypeController.text
                               : null,
                       items:
                           <String>['Privada', 'Pública', 'Mixta'].map((
@@ -841,13 +844,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           }).toList(),
                       onChanged: (String? newValue) {
                         setState(() {
-                          _projectTypeController.text = newValue!;
+                          projectTypeController.text = newValue!;
                         });
                       },
                       decoration: InputDecoration(labelText: 'Tipo de Obra'),
                     ),
                     TextField(
-                      controller: _workersController,
+                      controller: workersController,
                       decoration: InputDecoration(
                         labelText: 'Número de Trabajadores',
                       ),
@@ -856,19 +859,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     ListTile(
                       title: Text('Fecha Inicio'),
                       subtitle: Text(
-                        _startDate.toLocal().toString().split(' ')[0],
+                        startDate.toLocal().toString().split(' ')[0],
                       ),
                       trailing: Icon(Icons.calendar_today),
                       onTap: () async {
                         final DateTime? pickedDate = await showDatePicker(
                           context: context,
-                          initialDate: _startDate,
+                          initialDate: startDate,
                           firstDate: DateTime(2000),
                           lastDate: DateTime(2100),
                         );
-                        if (pickedDate != null && pickedDate != _startDate) {
+                        if (pickedDate != null && pickedDate != startDate) {
                           setState(() {
-                            _startDate = pickedDate;
+                            startDate = pickedDate;
                           });
                         }
                       },
@@ -876,19 +879,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     ListTile(
                       title: Text('Fecha Fin Previsto'),
                       subtitle: Text(
-                        _endDate.toLocal().toString().split(' ')[0],
+                        endDate.toLocal().toString().split(' ')[0],
                       ),
                       trailing: Icon(Icons.calendar_today),
                       onTap: () async {
                         final DateTime? pickedDate = await showDatePicker(
                           context: context,
-                          initialDate: _endDate,
+                          initialDate: endDate,
                           firstDate: DateTime(2000),
                           lastDate: DateTime(2100),
                         );
-                        if (pickedDate != null && pickedDate != _endDate) {
+                        if (pickedDate != null && pickedDate != endDate) {
                           setState(() {
-                            _endDate = pickedDate;
+                            endDate = pickedDate;
                           });
                         }
                       },
@@ -907,7 +910,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Expanded(
                           child: TextField(
-                            controller: _latitudeController,
+                            controller: latitudeController,
                             decoration: InputDecoration(
                               labelText: 'Latitud',
                               hintText: 'Ej: -12.0464',
@@ -918,7 +921,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         SizedBox(width: 8),
                         Expanded(
                           child: TextField(
-                            controller: _longitudeController,
+                            controller: longitudeController,
                             decoration: InputDecoration(
                               labelText: 'Longitud',
                               hintText: 'Ej: -77.0428',
@@ -963,8 +966,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
 
                           setState(() {
-                            _latitudeController.text = position.latitude.toStringAsFixed(6);
-                            _longitudeController.text = position.longitude.toStringAsFixed(6);
+                            latitudeController.text = position.latitude.toStringAsFixed(6);
+                            longitudeController.text = position.longitude.toStringAsFixed(6);
                           });
 
                           // Obtener dirección
@@ -976,10 +979,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             if (placemarks.isNotEmpty) {
                               Placemark place = placemarks[0];
                               setState(() {
-                                _locationAddress = '${place.street}, ${place.locality}, ${place.country}';
+                                locationAddress = '${place.street}, ${place.locality}, ${place.country}';
                               });
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Ubicación obtenida: $_locationAddress')),
+                                SnackBar(content: Text('Ubicación obtenida: $locationAddress')),
                               );
                             }
                           } catch (e) {
@@ -997,11 +1000,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         minimumSize: Size(double.infinity, 40),
                       ),
                     ),
-                    if (_locationAddress.isNotEmpty)
+                    if (locationAddress.isNotEmpty)
                       Padding(
                         padding: EdgeInsets.only(top: 8),
                         child: Text(
-                          'Dirección: $_locationAddress',
+                          'Dirección: $locationAddress',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -1022,11 +1025,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                String projectName = _projectNameController.text.trim();
+                String projectName = projectNameController.text.trim();
                 String projectDescription =
-                    _projectDescriptionController.text.trim();
-                String projectType = _projectTypeController.text.trim();
-                String workers = _workersController.text.trim();
+                    projectDescriptionController.text.trim();
+                String projectType = projectTypeController.text.trim();
+                String workers = workersController.text.trim();
 
                 if (projectName.isNotEmpty &&
                     projectDescription.isNotEmpty &&
@@ -1036,10 +1039,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     // Validar y preparar coordenadas GPS
                     double? latitude;
                     double? longitude;
-                    if (_latitudeController.text.isNotEmpty && _longitudeController.text.isNotEmpty) {
+                    if (latitudeController.text.isNotEmpty && longitudeController.text.isNotEmpty) {
                       try {
-                        latitude = double.parse(_latitudeController.text);
-                        longitude = double.parse(_longitudeController.text);
+                        latitude = double.parse(latitudeController.text);
+                        longitude = double.parse(longitudeController.text);
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Coordenadas GPS inválidas')),
@@ -1056,13 +1059,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           'description': projectDescription,
                           'type': projectType,
                           'workers': workers,
-                          'startDate': _startDate,
-                          'endDate': _endDate,
+                          'startDate': startDate,
+                          'endDate': endDate,
                           'adminId': user!.uid,
                           'createdAt': FieldValue.serverTimestamp(),
                           'latitude': latitude,
                           'longitude': longitude,
-                          'locationAddress': _locationAddress.isNotEmpty ? _locationAddress : null,
+                          'locationAddress': locationAddress.isNotEmpty ? locationAddress : null,
                           'updateHistory': [],
                         });
 
@@ -1217,14 +1220,26 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SizedBox(height: 16),
               Center(
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    "HACER REPORTE CON LA ACTUALIZAR",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isDarkMode ? Colors.blue[200] : Colors.blue,
-                      decoration: TextDecoration.underline,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProjectDocumentsScreen(
+                          projectId: selectedProject!,
+                          projectName: projectData['name'] ?? 'Proyecto',
+                        ),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.folder),
+                  label: Text('DOCUMENTACIÓN DEL PROYECTO'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(200, 50),
+                    backgroundColor: isDarkMode ? Colors.green[700] : Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
@@ -1258,7 +1273,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     SizedBox(height: 8.0),
                     DropdownButtonFormField<String>(
-                      value: _selectedRole,
+                      initialValue: _selectedRole,
                       items:
                           ['contratista', 'supervisor'].map((role) {
                             return DropdownMenuItem(
