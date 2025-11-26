@@ -47,6 +47,54 @@ class SectionCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  // Badge de materiales
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('sectionMaterials')
+                        .where('sectionId', isEqualTo: sectionId)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return SizedBox.shrink();
+                      }
+
+                      final materials = snapshot.data!.docs;
+                      final allAvailable = materials.every((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final available = (data['quantityAvailable'] ?? 0).toDouble();
+                        final needed = (data['quantityNeeded'] ?? 0).toDouble();
+                        return available >= needed;
+                      });
+
+                      return Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        margin: EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: allAvailable ? Colors.green : Colors.red,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              allAvailable ? Icons.check_circle : Icons.warning,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              allAvailable ? 'Disponible' : 'Sin materiales',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                   Icon(Icons.arrow_forward_ios, size: 16),
                 ],
               ),

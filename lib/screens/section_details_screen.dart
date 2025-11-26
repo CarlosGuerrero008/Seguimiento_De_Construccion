@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'section_materials_screen.dart';
 
 class SectionDetailsScreen extends StatefulWidget {
   final String sectionId;
@@ -33,6 +34,22 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
       appBar: AppBar(
         title: Text(widget.sectionData['name'] ?? 'Detalles de Sección'),
         actions: [
+          IconButton(
+            icon: Icon(Icons.inventory_2),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SectionMaterialsScreen(
+                    sectionId: widget.sectionId,
+                    sectionName: widget.sectionData['name'] ?? 'Sección',
+                    projectId: widget.projectId,
+                  ),
+                ),
+              );
+            },
+            tooltip: 'Materiales',
+          ),
           IconButton(
             icon: Icon(Icons.delete_outline),
             onPressed: () => _showDeleteSectionDialog(),

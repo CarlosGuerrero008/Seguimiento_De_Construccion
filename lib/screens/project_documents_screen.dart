@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:intl/intl.dart';
@@ -377,9 +377,9 @@ class _ProjectDocumentsScreenState extends State<ProjectDocumentsScreen> {
                             child: Column(
                               children: [
                                 Icon(
-                                  documentTypeIcons[document.type] ?? Icons.insert_drive_file,
+                                  _getFileIcon(document.fileExtension),
                                   size: 64,
-                                  color: Colors.grey[600],
+                                  color: _getFileIconColor(document.fileExtension),
                                 ),
                                 SizedBox(height: 16),
                                 Text(
@@ -415,6 +415,24 @@ class _ProjectDocumentsScreenState extends State<ProjectDocumentsScreen> {
 
   bool _isImageFile(String extension) {
     return ['jpg', 'jpeg', 'png', 'gif', 'bmp'].contains(extension.toLowerCase());
+  }
+
+  IconData _getFileIcon(String extension) {
+    final ext = extension.toLowerCase();
+    if (['pdf'].contains(ext)) return Icons.picture_as_pdf;
+    if (['doc', 'docx'].contains(ext)) return Icons.description;
+    if (['xls', 'xlsx'].contains(ext)) return Icons.table_chart;
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].contains(ext)) return Icons.image;
+    return Icons.insert_drive_file;
+  }
+
+  Color _getFileIconColor(String extension) {
+    final ext = extension.toLowerCase();
+    if (['pdf'].contains(ext)) return Colors.red;
+    if (['doc', 'docx'].contains(ext)) return Colors.blue;
+    if (['xls', 'xlsx'].contains(ext)) return Colors.green;
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].contains(ext)) return Colors.orange;
+    return Colors.grey[600]!;
   }
 
   String _getDocumentTypeName(String type) {
@@ -533,19 +551,27 @@ class _ProjectDocumentsScreenState extends State<ProjectDocumentsScreen> {
                 SizedBox(height: 16),
                 ElevatedButton.icon(
                   onPressed: () async {
-                    final ImagePicker picker = ImagePicker();
-                    final XFile? image = await picker.pickImage(
-                      source: ImageSource.gallery,
-                    );
-                    if (image != null) {
-                      setState(() {
-                        selectedFile = File(image.path);
-                        fileName = image.name;
-                      });
+                    try {
+                      FilePickerResult? result = await FilePicker.platform.pickFiles(
+                        type: FileType.custom,
+                        allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif', 'bmp'],
+                        allowMultiple: false,
+                      );
+                      
+                      if (result != null && result.files.single.path != null) {
+                        setState(() {
+                          selectedFile = File(result.files.single.path!);
+                          fileName = result.files.single.name;
+                        });
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error al seleccionar archivo: $e')),
+                      );
                     }
                   },
                   icon: Icon(Icons.attach_file),
-                  label: Text('Seleccionar archivo'),
+                  label: Text('Seleccionar archivo (PDF, DOC, XLS, Imágenes)'),
                   style: ElevatedButton.styleFrom(
                     minimumSize: Size(double.infinity, 45),
                   ),
