@@ -10,11 +10,11 @@ class GeminiService {
 
   GeminiService() {
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash-latest',
+      model: 'gemini-1.5-flash',
       apiKey: _apiKey,
     );
     _visionModel = GenerativeModel(
-      model: 'gemini-1.5-flash-latest',
+      model: 'gemini-1.5-flash',
       apiKey: _apiKey,
     );
   }
@@ -663,8 +663,41 @@ ESTRUCTURA: Seguir el formato de informes técnicos de avance de obra para contr
       };
     } catch (e) {
       print('Error generando reporte completo: $e');
+
+      // Calcular estadísticas básicas incluso si falla la IA
+      double totalProgress = 0;
+      for (var section in sections) {
+        totalProgress += (section['progressPercentage'] ?? 0).toDouble();
+      }
+      final avgProgress = sections.isNotEmpty ? totalProgress / sections.length : 0;
+
+      double totalMaterialsCost = 0;
+      for (var material in allMaterials) {
+        final quantityUsed = (material['quantityUsed'] ?? 0).toDouble();
+        final unitCost = (material['unitCost'] ?? 0).toDouble();
+        totalMaterialsCost += quantityUsed * unitCost;
+      }
+
       return {
-        'error': 'Error al generar reporte: $e',
+        'error': 'Error al generar análisis con IA: $e',
+        'projectName': projectData['name'] ?? 'Proyecto',
+        'projectType': projectData['type'] ?? 'No especificado',
+        'totalSections': sections.length,
+        'averageProgress': avgProgress,
+        'expectedProgress': 0.0,
+        'delayDays': 0,
+        'totalReports': 0,
+        'totalImages': 0,
+        'contractors': [],
+        'totalMaterials': allMaterials.length,
+        'materialsCost': totalMaterialsCost,
+        'startDate': DateTime.now().toIso8601String(),
+        'endDate': DateTime.now().toIso8601String(),
+        'elapsedDays': 0,
+        'remainingDays': 0,
+        'sectionsAnalysis': [],
+        'executiveSummary': 'Error al generar el resumen ejecutivo. Por favor, intente de nuevo.',
+        'generatedAt': DateTime.now().toIso8601String(),
       };
     }
   }

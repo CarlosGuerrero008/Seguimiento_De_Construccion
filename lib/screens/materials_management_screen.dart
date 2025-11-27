@@ -257,22 +257,41 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
     final usagePercentage =
         quantityPlanned > 0 ? (quantityUsed / quantityPlanned * 100) : 0;
 
-    Color statusColor;
-    switch (status) {
-      case 'Entregado':
-        statusColor = Colors.green;
-        break;
-      case 'En tránsito':
-        statusColor = Colors.orange;
-        break;
-      case 'Agotado':
-        statusColor = Colors.red;
-        break;
-      default:
-        statusColor = Colors.grey;
-    }
+    // Obtener asignaciones para mostrar disponibilidad
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('materialAssignments')
+          .where('materialId', isEqualTo: materialId)
+          .snapshots(),
+      builder: (context, assignmentsSnapshot) {
+        double totalAssigned = 0;
+        int sectionsCount = 0;
 
-    return Card(
+        if (assignmentsSnapshot.hasData) {
+          sectionsCount = assignmentsSnapshot.data!.docs.length;
+          for (var doc in assignmentsSnapshot.data!.docs) {
+            totalAssigned += (doc.data() as Map<String, dynamic>)['quantityPlanned'] ?? 0;
+          }
+        }
+
+        final available = quantityPlanned - totalAssigned;
+
+        Color statusColor;
+        switch (status) {
+          case 'Entregado':
+            statusColor = Colors.green;
+            break;
+          case 'En tránsito':
+            statusColor = Colors.orange;
+            break;
+          case 'Agotado':
+            statusColor = Colors.red;
+            break;
+          default:
+            statusColor = Colors.grey;
+        }
+
+        return Card(
       margin: EdgeInsets.only(bottom: 16),
       elevation: 2,
       child: ExpansionTile(
@@ -400,6 +419,73 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
                   ),
                 ],
                 SizedBox(height: 16),
+                // Mostrar inventario disponible
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: available > 0 ? Colors.blue.shade50 : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: available > 0 ? Colors.blue.shade200 : Colors.grey.shade300,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.assignment,
+                            size: 18,
+                            color: available > 0 ? Colors.blue : Colors.grey,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Control de Inventario',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Divider(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Asignado a secciones:', style: TextStyle(fontSize: 11)),
+                          Text(
+                            '${totalAssigned.toStringAsFixed(1)} $unit',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Disponible:', style: TextStyle(fontSize: 11)),
+                          Text(
+                            '${available.toStringAsFixed(1)} $unit',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: available > 0 ? Colors.green : Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (sectionsCount > 0) ...[
+                        SizedBox(height: 4),
+                        Text(
+                          'Usado en $sectionsCount ${sectionsCount == 1 ? 'sección' : 'secciones'}',
+                          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -421,6 +507,8 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
           ),
         ],
       ),
+        );
+      },
     );
   }
 

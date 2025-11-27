@@ -44,7 +44,7 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
   Widget _buildSummaryCard() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('materials')
+          .collection('materialAssignments')
           .where('projectId', isEqualTo: widget.projectId)
           .where('sectionId', isEqualTo: widget.sectionId)
           .snapshots(),
@@ -129,7 +129,7 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
   Widget _buildMaterialsList() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('materials')
+          .collection('materialAssignments')
           .where('projectId', isEqualTo: widget.projectId)
           .where('sectionId', isEqualTo: widget.sectionId)
           .snapshots(),
@@ -303,10 +303,24 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
       return;
     }
 
+    // Obtener asignaciones existentes en esta sección
+    final existingAssignments = await FirebaseFirestore.instance
+        .collection('materialAssignments')
+        .where('projectId', isEqualTo: widget.projectId)
+        .where('sectionId', isEqualTo: widget.sectionId)
+        .get();
+
+    // Crear set de IDs de materiales ya asignados
+    final assignedMaterialIds = existingAssignments.docs
+        .map((doc) => doc.data()['materialId'] as String)
+        .toSet();
+
     showDialog(
       context: context,
       builder: (context) {
         String? selectedMaterialId;
+        Map<String, dynamic>? selectedMaterialData;
+        double availableQuantity = 0;
         final quantityController = TextEditingController();
 
         return StatefulBuilder(
@@ -320,8 +334,12 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
                     decoration: InputDecoration(
                       labelText: 'Selecciona el material',
                       border: OutlineInputBorder(),
+                      helperText: 'Solo se muestran materiales no asignados',
+                      helperMaxLines: 2,
                     ),
-                    items: generalMaterials.docs.map((doc) {
+                    items: generalMaterials.docs
+                        .where((doc) => !assignedMaterialIds.contains(doc.id))
+                        .map((doc) {
                       final data = doc.data();
                       return DropdownMenuItem(
                         value: doc.id,
@@ -330,18 +348,89 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
                         ),
                       );
                     }).toList(),
-                    onChanged: (value) {
-                      setState(() => selectedMaterialId = value);
+                    onChanged: (value) async {
+                      if (value != null) {
+                        // Obtener datos del material
+                        final materialDoc = await FirebaseFirestore.instance
+                            .collection('materials')
+                            .doc(value)
+                            .get();
+
+                        final materialData = materialDoc.data()!;
+                        final totalPlanned = (materialData['quantityPlanned'] ?? 0).toDouble();
+
+                        // Calcular total ya asignado a todas las secciones
+                        final allAssignments = await FirebaseFirestore.instance
+                            .collection('materialAssignments')
+                            .where('materialId', isEqualTo: value)
+                            .get();
+
+                        double totalAssigned = 0;
+                        for (var doc in allAssignments.docs) {
+                          totalAssigned += (doc.data()['quantityPlanned'] ?? 0).toDouble();
+                        }
+
+                        setState(() {
+                          selectedMaterialId = value;
+                          selectedMaterialData = materialData;
+                          availableQuantity = totalPlanned - totalAssigned;
+                        });
+                      }
                     },
                   ),
+                  if (selectedMaterialId != null) ...[
+                    SizedBox(height: 12),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: availableQuantity > 0 ? Colors.green.shade50 : Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: availableQuantity > 0 ? Colors.green : Colors.red,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            availableQuantity > 0 ? Icons.check_circle : Icons.warning,
+                            color: availableQuantity > 0 ? Colors.green : Colors.red,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Disponible: ${availableQuantity.toStringAsFixed(1)} ${selectedMaterialData!['unit']}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: availableQuantity > 0 ? Colors.green.shade900 : Colors.red.shade900,
+                                  ),
+                                ),
+                                Text(
+                                  'Total: ${selectedMaterialData!['quantityPlanned']} ${selectedMaterialData!['unit']}',
+                                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   SizedBox(height: 16),
                   TextField(
                     controller: quantityController,
                     decoration: InputDecoration(
                       labelText: 'Cantidad planificada para esta sección',
                       border: OutlineInputBorder(),
+                      suffixText: selectedMaterialData?['unit'] ?? '',
+                      helperText: selectedMaterialId != null
+                          ? 'Máximo: ${availableQuantity.toStringAsFixed(1)}'
+                          : null,
                     ),
-                    keyboardType: TextInputType.number,
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    enabled: selectedMaterialId != null && availableQuantity > 0,
                   ),
                 ],
               ),
@@ -367,35 +456,50 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
                     return;
                   }
 
+                  final requestedQuantity = double.tryParse(quantityController.text) ?? 0;
+
+                  // Validar que no exceda el disponible
+                  if (requestedQuantity > availableQuantity) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'La cantidad solicitada (${requestedQuantity.toStringAsFixed(1)}) excede lo disponible (${availableQuantity.toStringAsFixed(1)} ${selectedMaterialData!['unit']})'
+                        ),
+                        backgroundColor: Colors.red,
+                        duration: Duration(seconds: 4),
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (requestedQuantity <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('La cantidad debe ser mayor a 0')),
+                    );
+                    return;
+                  }
+
                   try {
-                    // Obtener datos del material original
-                    final originalMaterial = await FirebaseFirestore.instance
-                        .collection('materials')
-                        .doc(selectedMaterialId)
-                        .get();
-
-                    final originalData = originalMaterial.data()!;
-
-                    // Crear nuevo material asignado a la sección
-                    await FirebaseFirestore.instance.collection('materials').add({
+                    // Crear asignación en materialAssignments
+                    await FirebaseFirestore.instance.collection('materialAssignments').add({
+                      'materialId': selectedMaterialId,
                       'projectId': widget.projectId,
                       'sectionId': widget.sectionId,
-                      'name': originalData['name'],
-                      'description': originalData['description'],
-                      'unit': originalData['unit'],
-                      'quantityPlanned': double.parse(quantityController.text),
+                      'sectionName': widget.sectionName,
+                      'name': selectedMaterialData!['name'],
+                      'description': selectedMaterialData!['description'],
+                      'unit': selectedMaterialData!['unit'],
+                      'quantityPlanned': requestedQuantity,
                       'quantityUsed': 0.0,
-                      'unitCost': originalData['unitCost'],
-                      'supplier': originalData['supplier'],
+                      'unitCost': selectedMaterialData!['unitCost'],
                       'status': 'Pendiente',
-                      'deliveryDate': originalData['deliveryDate'],
                       'createdAt': FieldValue.serverTimestamp(),
                     });
 
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Material asignado exitosamente'),
+                        content: Text('✓ Material asignado exitosamente'),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -417,10 +521,11 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
     );
   }
 
-  void _showEditUsageDialog(String materialId, Map<String, dynamic> data) {
+  void _showEditUsageDialog(String assignmentId, Map<String, dynamic> data) {
     final quantityUsedController = TextEditingController(
       text: data['quantityUsed']?.toString() ?? '0',
     );
+    final quantityPlanned = (data['quantityPlanned'] ?? 0).toDouble();
     String selectedStatus = data['status'] ?? 'Pendiente';
 
     showDialog(
@@ -439,7 +544,7 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Cantidad planificada: ${data['quantityPlanned']} ${data['unit']}',
+                  'Cantidad planificada: ${quantityPlanned.toStringAsFixed(1)} ${data['unit']}',
                   style: TextStyle(color: Colors.grey[600]),
                 ),
                 Divider(height: 24),
@@ -449,8 +554,9 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
                     labelText: 'Cantidad Usada',
                     border: OutlineInputBorder(),
                     suffixText: data['unit'],
+                    helperText: 'Máximo: ${quantityPlanned.toStringAsFixed(1)}',
                   ),
-                  keyboardType: TextInputType.number,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
                 ),
                 SizedBox(height: 16),
                 DropdownButtonFormField<String>(
@@ -461,8 +567,8 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
                   ),
                   items: [
                     'Pendiente',
-                    'En tránsito',
-                    'Entregado',
+                    'En uso',
+                    'Completado',
                     'Agotado'
                   ].map((status) {
                     return DropdownMenuItem(
@@ -484,20 +590,61 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
+                final newQuantityUsed = double.tryParse(quantityUsedController.text) ?? 0;
+
+                // Validar que no exceda lo planificado
+                if (newQuantityUsed > quantityPlanned) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'La cantidad usada (${newQuantityUsed.toStringAsFixed(1)}) no puede exceder lo planificado (${quantityPlanned.toStringAsFixed(1)})'
+                      ),
+                      backgroundColor: Colors.red,
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                  return;
+                }
+
                 try {
+                  final oldQuantityUsed = (data['quantityUsed'] ?? 0).toDouble();
+                  final materialId = data['materialId'];
+
+                  // 1. Actualizar la asignación
                   await FirebaseFirestore.instance
-                      .collection('materials')
-                      .doc(materialId)
+                      .collection('materialAssignments')
+                      .doc(assignmentId)
                       .update({
-                    'quantityUsed':
-                        double.tryParse(quantityUsedController.text) ?? 0,
+                    'quantityUsed': newQuantityUsed,
                     'status': selectedStatus,
                   });
+
+                  // 2. Actualizar el material general
+                  // Obtener el material general
+                  final materialDoc = await FirebaseFirestore.instance
+                      .collection('materials')
+                      .doc(materialId)
+                      .get();
+
+                  if (materialDoc.exists) {
+                    final currentTotalUsed = (materialDoc.data()!['quantityUsed'] ?? 0).toDouble();
+
+                    // Calcular el nuevo total: restar el uso anterior de esta asignación y sumar el nuevo
+                    final newTotalUsed = currentTotalUsed - oldQuantityUsed + newQuantityUsed;
+
+                    // Actualizar el material general
+                    await FirebaseFirestore.instance
+                        .collection('materials')
+                        .doc(materialId)
+                        .update({
+                      'quantityUsed': newTotalUsed,
+                    });
+                  }
 
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Material actualizado'),
+                      content: Text('✓ Material actualizado. Inventario global sincronizado.'),
                       backgroundColor: Colors.green,
                     ),
                   );

@@ -31,7 +31,7 @@ class _ProjectChatbotScreenState extends State<ProjectChatbotScreen> {
   void initState() {
     super.initState();
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash-latest',
+      model: 'gemini-1.5-flash',
       apiKey: 'AIzaSyAh6dcpBBUs82UdyUt_ESbzV6ni8qWBks8',
     );
     _initializeContext();
