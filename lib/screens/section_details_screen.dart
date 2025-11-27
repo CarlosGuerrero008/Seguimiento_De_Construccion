@@ -8,6 +8,9 @@ import 'dart:convert';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:flutter/services.dart';
+import 'ai_report_screen.dart';
+import 'section_materials_screen.dart';
 
 class SectionDetailsScreen extends StatefulWidget {
   final String sectionId;
@@ -46,6 +49,10 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildProgressCard(),
+            SizedBox(height: 16),
+            _buildAIReportButton(),
+            SizedBox(height: 12),
+            _buildMaterialsButton(),
             SizedBox(height: 16),
             _buildDailyReportsSection(),
             SizedBox(height: 80), // Espacio para el FAB
@@ -112,6 +119,199 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAIReportButton() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.purple.shade600, Colors.deepPurple.shade800],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.purple.withOpacity(0.4),
+              blurRadius: 12,
+              offset: Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () async {
+              // Obtener datos del proyecto
+              final projectDoc = await FirebaseFirestore.instance
+                  .collection('projects')
+                  .doc(widget.projectId)
+                  .get();
+
+              if (!projectDoc.exists) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: Proyecto no encontrado')),
+                );
+                return;
+              }
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AIReportScreen(
+                    projectId: widget.projectId,
+                    sectionId: widget.sectionId,
+                    sectionName: widget.sectionData['name'] ?? 'Sección',
+                    sectionData: widget.sectionData,
+                    projectData: projectDoc.data() as Map<String, dynamic>,
+                  ),
+                ),
+              );
+            },
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.auto_awesome,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'GENERAR REPORTE CON IA',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Análisis inteligente de imágenes y exportación a PDF',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMaterialsButton() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.green.shade600, Colors.teal.shade700],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.green.withOpacity(0.3),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SectionMaterialsScreen(
+                    projectId: widget.projectId,
+                    sectionId: widget.sectionId,
+                    sectionName: widget.sectionData['name'] ?? 'Sección',
+                  ),
+                ),
+              );
+            },
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.inventory_2,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'MATERIALES DE LA SECCIÓN',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Asigna y controla materiales utilizados',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -271,9 +471,32 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
                 children: [
                   Icon(Icons.location_on, size: 16, color: Colors.red),
                   SizedBox(width: 8),
-                  Text(
-                    'Lat: ${data['latitude'].toStringAsFixed(6)}, Lon: ${data['longitude'].toStringAsFixed(6)}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  Expanded(
+                    child: Text(
+                      'Lat: ${data['latitude'].toStringAsFixed(6)}, Lon: ${data['longitude'].toStringAsFixed(6)}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.copy, size: 18),
+                    tooltip: 'Copiar coordenadas',
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
+                    onPressed: () => _copyCoordinates(
+                      data['latitude'],
+                      data['longitude'],
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  IconButton(
+                    icon: Icon(Icons.map, size: 18, color: Colors.blue),
+                    tooltip: 'Ver en Google Maps',
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
+                    onPressed: () => _openInGoogleMaps(
+                      data['latitude'],
+                      data['longitude'],
+                    ),
                   ),
                 ],
               ),
@@ -752,7 +975,7 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
           .collection('dailyReports')
           .where('sectionId', isEqualTo: widget.sectionId)
           .get();
-      
+
       for (var doc in reports.docs) {
         await doc.reference.delete();
       }
@@ -764,7 +987,7 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
           .delete();
 
       Navigator.pop(context, true); // Regresar con resultado true
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Sección eliminada exitosamente')),
       );
@@ -773,5 +996,83 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
         SnackBar(content: Text('Error al eliminar sección: $e')),
       );
     }
+  }
+
+  void _copyCoordinates(double latitude, double longitude) {
+    final coordinates = '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
+    Clipboard.setData(ClipboardData(text: coordinates));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Coordenadas copiadas: $coordinates'),
+        duration: Duration(seconds: 2),
+        action: SnackBarAction(
+          label: 'Ver en Maps',
+          onPressed: () => _openInGoogleMaps(latitude, longitude),
+        ),
+      ),
+    );
+  }
+
+  void _openInGoogleMaps(double latitude, double longitude) {
+    final googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.map, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('Abrir en Google Maps'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Coordenadas:'),
+            SizedBox(height: 8),
+            SelectableText(
+              '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16),
+            Text('URL de Google Maps:'),
+            SizedBox(height: 8),
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: SelectableText(
+                googleMapsUrl,
+                style: TextStyle(fontSize: 12, color: Colors.blue),
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Copia la URL y ábrela en tu navegador para ver la ubicación en Google Maps.',
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: googleMapsUrl));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('URL copiada al portapapeles')),
+              );
+            },
+            child: Text('Copiar URL'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
   }
 }

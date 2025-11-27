@@ -3,7 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:typed_data';
 import 'login_screen.dart';
-import 'edit_profile_screen.dart';
+import 'profile_settings_screen.dart';
+import 'project_dashboard_screen.dart';
+import 'materials_management_screen.dart';
+import 'create_project_screen.dart';
 import '../widgets/image_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:percent_indicator/percent_indicator.dart';
@@ -11,6 +14,8 @@ import 'section_details_screen.dart';
 import '../widgets/profile_option.dart';
 import '../widgets/detail_item.dart';
 import '../widgets/invitation_list_panel.dart';
+import 'project_report_screen.dart';
+import 'project_chatbot_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -20,11 +25,15 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final User? user = FirebaseAuth.instance.currentUser;
   final ImageService _imageService = ImageService();
+  final TextEditingController _searchController = TextEditingController();
   String? selectedProject;
   bool showProjectDetails = false;
   bool isDarkMode = false;
   OverlayEntry? _profileOverlayEntry;
   Uint8List? _profileImageBytes;
+  bool showInviteSection = false;
+  bool showProjectDetailsExpanded = false;
+  String _searchQuery = '';
 
   Widget _buildProjectDetailsView(String projectId) {
     return FutureBuilder<DocumentSnapshot>(
@@ -124,6 +133,8 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         showProjectDetails = false;
         selectedProject = null;
+        showInviteSection = false;
+        showProjectDetailsExpanded = false;
       });
     } catch (e) {
       // Cerrar el diálogo de carga si hay error
@@ -166,24 +177,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _saveThemePreference(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isDarkMode', value);
-  }
-
   void logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => LoginScreen()),
     );
-  }
-
-  void toggleTheme() {
-    setState(() {
-      isDarkMode = !isDarkMode;
-    });
-    _saveThemePreference(isDarkMode);
   }
 
   String getUserName() {
@@ -283,15 +282,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => EditProfileScreen(),
+                              builder: (context) => ProfileSettingsScreen(),
                             ),
                           ).then((updated) {
-                            if (updated == true) {
-                              _loadProfileImage(); // Recargar imagen
-                              setState(
-                                () {},
-                              ); // Forzar reconstrucción del widget
-                            }
+                            // Recargar tema y perfil cuando regrese de configuraciones
+                            _loadThemePreference();
+                            _loadProfileImage();
+                            setState(() {});
                           });
                         },
                       ),
@@ -370,9 +367,8 @@ class _HomeScreenState extends State<HomeScreen> {
       data: isDarkMode ? _buildDarkTheme() : _buildLightTheme(),
       child: Scaffold(
         appBar: AppBar(
-          title: Text("OSCUTO"),
+          title: Text("Seguimientos"),
           actions: [
-            IconButton(icon: Icon(Icons.brightness_6), onPressed: toggleTheme),
             Stack(
               children: [
                 IconButton(
@@ -453,6 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _removeOverlay();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -495,24 +492,83 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Divider(color: isDarkMode ? Colors.grey[700] : Colors.grey[300]),
+          // Barra de búsqueda
+          Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDarkMode ? Colors.grey[850] : Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.toLowerCase();
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Buscar proyectos...',
+                prefixIcon: Icon(Icons.search, color: Colors.blue),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(Icons.clear),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: isDarkMode ? Colors.grey[800] : Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 16.0,
               vertical: 8.0,
             ),
-            child: ElevatedButton(
-              onPressed: _showCreateProjectDialog,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreateProjectScreen(),
+                  ),
+                );
+                // Refrescar si se creó el proyecto
+                if (result == true) {
+                  setState(() {});
+                }
+              },
+              icon: Icon(Icons.add_circle_outline, size: 24),
+              label: Text(
+                "CREAR PROYECTO",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
               style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 50),
+                minimumSize: Size(double.infinity, 56),
                 backgroundColor:
                     isDarkMode ? Colors.blueGrey[700] : Colors.blue,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: 3,
               ),
-              child: Text("CREAR PROYECTO"),
             ),
           ),
           StreamBuilder<QuerySnapshot>(
@@ -574,8 +630,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         final projectData =
                             projectSnapshot.data!.data()
                                 as Map<String, dynamic>;
+
+                        // Filtrar por búsqueda
+                        final projectName = projectData['name'] ?? '';
+                        if (_searchQuery.isNotEmpty &&
+                            !projectName.toLowerCase().contains(_searchQuery)) {
+                          return SizedBox.shrink();
+                        }
+
                         return _buildProjectCard(
-                          projectData['name'],
+                          projectData,
                           projectId,
                         );
                       },
@@ -592,203 +656,178 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildProjectCard(String projectName, String projectId) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: () {
-          setState(() {
-            selectedProject = projectId; //  Guardar el ID
-            showProjectDetails = true;
-          });
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            projectName,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget _buildProjectCard(Map<String, dynamic> projectData, String projectId) {
+    final projectName = projectData['name'] ?? 'Sin nombre';
+    final projectType = projectData['type'] ?? 'No especificado';
+    final description = projectData['description'] ?? 'Sin descripción';
+    final workers = projectData['workers'] ?? 'N/A';
 
-  void _showCreateProjectDialog() {
-    final _projectNameController = TextEditingController();
-    final _projectDescriptionController = TextEditingController();
-    final _projectTypeController = TextEditingController();
-    final _workersController = TextEditingController();
-    DateTime _startDate = DateTime.now();
-    DateTime _endDate = DateTime.now().add(
-      Duration(days: 30),
-    ); //  Fecha prevista por defecto
+    // Calcular progreso
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('projectSections')
+          .where('projectId', isEqualTo: projectId)
+          .snapshots(),
+      builder: (context, sectionSnapshot) {
+        double avgProgress = 0;
+        int sectionCount = 0;
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Crear Nuevo Proyecto'),
-          content: SingleChildScrollView(
-            child: StatefulBuilder(
-              //  Usamos StatefulBuilder para manejar el estado dentro del diálogo
-              builder: (BuildContext context, StateSetter setState) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: _projectNameController,
-                      decoration: InputDecoration(
-                        labelText: 'Nombre del Proyecto',
-                      ),
-                    ),
-                    TextField(
-                      controller: _projectDescriptionController,
-                      decoration: InputDecoration(
-                        labelText: 'Descripción del Proyecto',
-                      ),
-                    ),
-                    DropdownButtonFormField<String>(
-                      value:
-                          _projectTypeController.text.isNotEmpty
-                              ? _projectTypeController.text
-                              : null,
-                      items:
-                          <String>['Privada', 'Pública', 'Mixta'].map((
-                            String value,
-                          ) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _projectTypeController.text = newValue!;
-                        });
-                      },
-                      decoration: InputDecoration(labelText: 'Tipo de Obra'),
-                    ),
-                    TextField(
-                      controller: _workersController,
-                      decoration: InputDecoration(
-                        labelText: 'Número de Trabajadores',
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                    ListTile(
-                      title: Text('Fecha Inicio'),
-                      subtitle: Text(
-                        _startDate.toLocal().toString().split(' ')[0],
-                      ),
-                      trailing: Icon(Icons.calendar_today),
-                      onTap: () async {
-                        final DateTime? pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: _startDate,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (pickedDate != null && pickedDate != _startDate) {
-                          setState(() {
-                            _startDate = pickedDate;
-                          });
-                        }
-                      },
-                    ),
-                    ListTile(
-                      title: Text('Fecha Fin Previsto'),
-                      subtitle: Text(
-                        _endDate.toLocal().toString().split(' ')[0],
-                      ),
-                      trailing: Icon(Icons.calendar_today),
-                      onTap: () async {
-                        final DateTime? pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: _endDate,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (pickedDate != null && pickedDate != _endDate) {
-                          setState(() {
-                            _endDate = pickedDate;
-                          });
-                        }
-                      },
-                    ),
+        if (sectionSnapshot.hasData && sectionSnapshot.data!.docs.isNotEmpty) {
+          sectionCount = sectionSnapshot.data!.docs.length;
+          double totalProgress = 0;
+          for (var doc in sectionSnapshot.data!.docs) {
+            totalProgress += (doc.data() as Map<String, dynamic>)['progressPercentage'] ?? 0;
+          }
+          avgProgress = totalProgress / sectionCount;
+        }
+
+        return Card(
+          elevation: 4,
+          margin: EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              setState(() {
+                selectedProject = projectId;
+                showProjectDetails = true;
+              });
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  colors: [
+                    isDarkMode ? Colors.grey[800]! : Colors.white,
+                    isDarkMode ? Colors.grey[850]! : Colors.blue.shade50,
                   ],
-                );
-              },
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Nombre y tipo
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            projectName,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            projectType,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 12),
+
+                    // Descripción
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 12),
+
+                    // Información adicional
+                    Row(
+                      children: [
+                        Icon(Icons.people, size: 16, color: Colors.blue),
+                        SizedBox(width: 4),
+                        Text(
+                          '$workers trabajadores',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Icon(Icons.construction, size: 16, color: Colors.orange),
+                        SizedBox(width: 4),
+                        Text(
+                          '$sectionCount secciones',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    if (sectionCount > 0) ...[
+                      SizedBox(height: 12),
+                      // Barra de progreso
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Progreso General',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                ),
+                              ),
+                              Text(
+                                '${avgProgress.toStringAsFixed(1)}%',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: avgProgress < 30 ? Colors.red :
+                                         avgProgress < 70 ? Colors.orange : Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: LinearProgressIndicator(
+                              value: avgProgress / 100,
+                              minHeight: 8,
+                              backgroundColor: Colors.grey[300],
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                avgProgress < 30 ? Colors.red :
+                                avgProgress < 70 ? Colors.orange : Colors.green,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                String projectName = _projectNameController.text.trim();
-                String projectDescription =
-                    _projectDescriptionController.text.trim();
-                String projectType = _projectTypeController.text.trim();
-                String workers = _workersController.text.trim();
-
-                if (projectName.isNotEmpty &&
-                    projectDescription.isNotEmpty &&
-                    projectType.isNotEmpty &&
-                    workers.isNotEmpty) {
-                  try {
-                    //  1. Crear el proyecto en Firestore
-                    final newProjectRef = await FirebaseFirestore.instance
-                        .collection('projects')
-                        .add({
-                          'name': projectName,
-                          'description': projectDescription,
-                          'type': projectType,
-                          'workers': workers,
-                          'startDate': _startDate,
-                          'endDate': _endDate,
-                          'adminId': user!.uid,
-                          'createdAt': FieldValue.serverTimestamp(),
-                        });
-
-                    final newProjectId = newProjectRef.id;
-
-                    //  Opcional:  Agregar al administrador al proyecto con el rol "admin"
-                    await FirebaseFirestore.instance
-                        .collection('projectUsers')
-                        .add({
-                          'projectId': newProjectId,
-                          'userId': user!.uid,
-                          'role': 'admin',
-                        });
-
-                    Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Proyecto creado con éxito.')),
-                    );
-                    setState(() {});
-                  } catch (e) {
-                    print('Error al crear el proyecto: $e');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error al crear el proyecto.')),
-                    );
-                  }
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Por favor, completa todos los campos.'),
-                    ),
-                  );
-                }
-              },
-              child: Text('Crear'),
-            ),
-          ],
         );
       },
     );
@@ -808,6 +847,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   setState(() {
                     showProjectDetails = false;
                     selectedProject = null;
+                    showInviteSection = false;
+                    showProjectDetailsExpanded = false;
                   });
                 },
               ),
@@ -832,61 +873,189 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DetailItem(
-                label: "Tipo de Obra:",
-                value: projectData['type'] ?? "No especificado",
-                isDarkMode: isDarkMode,
+              // Botón para invitar usuarios (movido al inicio)
+              if (projectData['adminId'] == user?.uid)
+                Column(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          showInviteSection = !showInviteSection;
+                          if (!showInviteSection) {
+                            // Limpiar campos al cerrar
+                            _emailController.clear();
+                            _selectedRole = null;
+                          }
+                        });
+                      },
+                      icon: Icon(showInviteSection ? Icons.keyboard_arrow_up : Icons.person_add),
+                      label: Text('Invitar Usuario al Proyecto'),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size(double.infinity, 50),
+                        backgroundColor: isDarkMode ? Colors.blueGrey[700] : Colors.blue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    if (showInviteSection)
+                      Container(
+                        padding: EdgeInsets.all(16.0),
+                        margin: EdgeInsets.only(top: 8.0, bottom: 16.0),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: isDarkMode ? Colors.grey[700]! : Colors.grey,
+                          ),
+                          borderRadius: BorderRadius.circular(8.0),
+                          color: isDarkMode ? Colors.grey[850] : Colors.grey[50],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextField(
+                              controller: _emailController,
+                              decoration: InputDecoration(
+                                labelText: 'Correo Electrónico del Usuario',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.email),
+                              ),
+                            ),
+                            SizedBox(height: 12.0),
+                            DropdownButtonFormField<String>(
+                              value: _selectedRole,
+                              items: ['contratista', 'supervisor'].map((role) {
+                                return DropdownMenuItem(
+                                  value: role,
+                                  child: Text(role),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedRole = value;
+                                });
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Rol del Usuario',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.work),
+                              ),
+                            ),
+                            SizedBox(height: 16.0),
+                            ElevatedButton(
+                              onPressed: _inviteUser,
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: Size(double.infinity, 45),
+                              ),
+                              child: Text('Enviar Invitación'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    SizedBox(height: 16),
+                  ],
+                ),
+              // Sección colapsable de detalles del proyecto
+              Column(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        showProjectDetailsExpanded = !showProjectDetailsExpanded;
+                      });
+                    },
+                    icon: Icon(showProjectDetailsExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down),
+                    label: Text('Detalles del Proyecto'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(double.infinity, 50),
+                      backgroundColor: isDarkMode ? Colors.blueGrey[700] : Colors.blue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  if (showProjectDetailsExpanded)
+                    Container(
+                      padding: EdgeInsets.all(16.0),
+                      margin: EdgeInsets.only(top: 8.0, bottom: 16.0),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isDarkMode ? Colors.grey[700]! : Colors.grey,
+                        ),
+                        borderRadius: BorderRadius.circular(8.0),
+                        color: isDarkMode ? Colors.grey[850] : Colors.grey[50],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          DetailItem(
+                            label: "Tipo de Obra:",
+                            value: projectData['type'] ?? "No especificado",
+                            isDarkMode: isDarkMode,
+                          ),
+                          SizedBox(height: 16),
+                          DetailItem(
+                            label: "Descripción:",
+                            value: projectData['description'] ?? "Sin descripción",
+                            isDarkMode: isDarkMode,
+                          ),
+                          SizedBox(height: 16),
+                          DetailItem(
+                            label: "Trabajadores:",
+                            value: projectData['workers'] ?? "No especificado",
+                            isDarkMode: isDarkMode,
+                          ),
+                          SizedBox(height: 16),
+                          DetailItem(
+                            label: "Fecha Inicio:",
+                            value:
+                                projectData['startDate'] != null
+                                    ? (projectData['startDate'] as Timestamp)
+                                        .toDate()
+                                        .toLocal()
+                                        .toString()
+                                        .split(' ')[0]
+                                    : "No especificada",
+                            isDarkMode: isDarkMode,
+                          ),
+                          SizedBox(height: 16),
+                          DetailItem(
+                            label: "Fecha Fin Prevista:",
+                            value:
+                                projectData['endDate'] != null
+                                    ? (projectData['endDate'] as Timestamp)
+                                        .toDate()
+                                        .toLocal()
+                                        .toString()
+                                        .split(' ')[0]
+                                    : "No especificada",
+                            isDarkMode: isDarkMode,
+                          ),
+                        ],
+                      ),
+                    ),
+                  SizedBox(height: 16),
+                ],
               ),
-              SizedBox(height: 16),
-              DetailItem(
-                label: "Descripción:",
-                value: projectData['description'] ?? "Sin descripción",
-                isDarkMode: isDarkMode,
-              ),
-              SizedBox(height: 16),
-              DetailItem(
-                label: "Trabajadores:",
-                value: projectData['workers'] ?? "No especificado",
-                isDarkMode: isDarkMode,
-              ),
-              SizedBox(height: 16),
-              DetailItem(
-                label: "Fecha Inicio:",
-                value:
-                    projectData['startDate'] != null
-                        ? (projectData['startDate'] as Timestamp)
-                            .toDate()
-                            .toLocal()
-                            .toString()
-                            .split(' ')[0]
-                        : "No especificada",
-                isDarkMode: isDarkMode,
-              ),
-              SizedBox(height: 16),
-              DetailItem(
-                label: "Fecha Fin Prevista:",
-                value:
-                    projectData['endDate'] != null
-                        ? (projectData['endDate'] as Timestamp)
-                            .toDate()
-                            .toLocal()
-                            .toString()
-                            .split(' ')[0]
-                        : "No especificada",
-                isDarkMode: isDarkMode,
-              ),
-              SizedBox(height: 32),
-              // NUEVA SECCIÓN: Progreso General del Proyecto
-              _buildProgressSection(),
-              SizedBox(height: 24),
-              // NUEVA SECCIÓN: Secciones de la Obra
-              _buildProjectSections(),
-              SizedBox(height: 32),
+              // BOTONES IMPORTANTES ARRIBA (Dashboard y Materiales)
               Center(
-                child: ElevatedButton(
-                  onPressed: () {},
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProjectDashboardScreen(
+                          projectId: selectedProject!,
+                          projectData: projectData,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.dashboard),
+                  label: Text("VER DASHBOARD"),
                   style: ElevatedButton.styleFrom(
-                    minimumSize: Size(200, 50),
+                    minimumSize: Size(double.infinity, 55),
                     backgroundColor:
                         isDarkMode ? Colors.blueGrey[700] : Colors.blue,
                     foregroundColor: Colors.white,
@@ -894,77 +1063,105 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: Text("MÁS DETALLES"),
                 ),
               ),
               SizedBox(height: 16),
               Center(
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    "HACER REPORTE CON LA ACTUALIZAR",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isDarkMode ? Colors.blue[200] : Colors.blue,
-                      decoration: TextDecoration.underline,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MaterialsManagementScreen(
+                          projectId: selectedProject!,
+                          projectName: projectData['name'] ?? 'Proyecto',
+                        ),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.inventory),
+                  label: Text("GESTIONAR MATERIALES"),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(double.infinity, 55),
+                    backgroundColor:
+                        isDarkMode ? Colors.green[700] : Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 16),
-              // Sección para Invitar Usuarios
-              Container(
-                padding: EdgeInsets.all(16.0),
-                margin: EdgeInsets.only(top: 24.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Invitar Usuario al Proyecto',
-                      style: TextStyle(
-                        fontSize: 18.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 16.0),
-                    TextField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        labelText: 'Correo Electrónico del Usuario',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    SizedBox(height: 8.0),
-                    DropdownButtonFormField<String>(
-                      value: _selectedRole,
-                      items:
-                          ['contratista', 'supervisor'].map((role) {
-                            return DropdownMenuItem(
-                              value: role,
-                              child: Text(role),
-                            );
-                          }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedRole = value;
-                        });
+              SizedBox(height: 24),
+              // NUEVA SECCIÓN: Progreso General del Proyecto
+              _buildProgressSection(),
+              SizedBox(height: 24),
+              // NUEVA SECCIÓN: Secciones de la Obra
+              _buildProjectSections(),
+              SizedBox(height: 32),
+              // BOTONES SECUNDARIOS HORIZONTALES (Reporte y Chatbot)
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProjectReportScreen(
+                              projectId: selectedProject!,
+                              projectData: projectData,
+                            ),
+                          ),
+                        );
                       },
-                      decoration: InputDecoration(
-                        labelText: 'Rol del Usuario',
-                        border: OutlineInputBorder(),
+                      icon: Icon(Icons.assessment, size: 20),
+                      label: Text(
+                        "REPORTE COMPLETO",
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size(0, 55),
+                        backgroundColor:
+                            isDarkMode ? Colors.purple[700] : Colors.purple,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     ),
-                    SizedBox(height: 16.0),
-                    ElevatedButton(
-                      onPressed: _inviteUser,
-                      child: Text('Invitar'),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProjectChatbotScreen(
+                              projectId: selectedProject!,
+                              projectData: projectData,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: Icon(Icons.smart_toy, size: 20),
+                      label: Text(
+                        "ASISTENTE IA",
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size(0, 55),
+                        backgroundColor:
+                            isDarkMode ? Colors.orange[700] : Colors.orange,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               SizedBox(height: 50), // Agregar espacio extra al final
             ],
