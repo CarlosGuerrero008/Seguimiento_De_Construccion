@@ -5,7 +5,6 @@ class ProfileOption extends StatelessWidget {
   final String text;
   final Color? color;
   final VoidCallback onTap;
-  final bool isDarkMode;
 
   const ProfileOption({
     Key? key,
@@ -13,11 +12,12 @@ class ProfileOption extends StatelessWidget {
     required this.text,
     this.color,
     required this.onTap,
-    required this.isDarkMode,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -26,14 +26,14 @@ class ProfileOption extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: color ?? (isDarkMode ? Colors.grey[300] : Colors.grey[700]),
+              color: color ?? (isDark ? Colors.grey[300] : Colors.grey[700]),
             ),
             const SizedBox(width: 16),
             Text(
               text,
               style: TextStyle(
                 fontSize: 14,
-                color: color ?? (isDarkMode ? Colors.white : Colors.black),
+                color: color ?? (isDark ? Colors.white : Colors.black),
               ),
             ),
           ],

@@ -2,8 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/home_screen.dart';
 import '../screens/login_screen.dart';
+import '../services/deep_link_service.dart';
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
+  @override
+  _AuthWrapperState createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  final DeepLinkService _deepLinkService = DeepLinkService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Inicializar el servicio de deep linking después de que se construya el widget
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _deepLinkService.initialize(context);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _deepLinkService.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
@@ -18,10 +43,16 @@ class AuthWrapper extends StatelessWidget {
           if (user.emailVerified) {
             return HomeScreen();
           } else {
-            return LoginScreen(); // Redirige si no ha verificado el correo
+            // Si hay un token pendiente, pasarlo al LoginScreen
+            return LoginScreen(
+              invitationToken: _deepLinkService.pendingToken,
+            );
           }
         }
-        return LoginScreen(); // Si no hay usuario autenticado
+        // Si hay un token pendiente, pasarlo al LoginScreen
+        return LoginScreen(
+          invitationToken: _deepLinkService.pendingToken,
+        );
       },
     );
   }

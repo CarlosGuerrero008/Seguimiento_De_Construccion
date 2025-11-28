@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/gemini_service.dart';
 import '../services/pdf_generator_service.dart';
 
@@ -111,6 +112,8 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
   }
 
   Widget _buildInfoRow(String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -118,7 +121,10 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
         children: [
           Text(
             '$label:',
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            style: TextStyle(
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              fontSize: 14
+            ),
           ),
           Text(
             value,
@@ -316,12 +322,25 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
                 Container(
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.blue.shade900.withOpacity(0.3)
+                        : Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.blue.shade700
+                          : Colors.blue.shade200,
+                    ),
                   ),
                   child: Text(
                     _reportData?['executiveSummary'] ?? 'No disponible',
-                    style: TextStyle(fontSize: 14, height: 1.5),
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.5,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black87,
+                    ),
                   ),
                 ),
               ],
@@ -365,6 +384,8 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
   }
 
   Widget _buildStatCard(String value, String label, IconData icon, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -386,7 +407,10 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
           ),
           Text(
             label,
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: 12,
+              color: isDark ? Colors.grey[400] : Colors.grey[600]
+            ),
           ),
         ],
       ),
@@ -527,7 +551,18 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
     );
 
     try {
-      final pdfFile = await _pdfService.generateCompleteProjectReportPDF(_reportData!);
+      // Obtener datos del usuario actual
+      final user = FirebaseAuth.instance.currentUser;
+      Map<String, dynamic>? userData;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        userData = userDoc.data();
+      }
+
+      final pdfFile = await _pdfService.generateCompleteProjectReportPDF(_reportData!, userData);
       if (!mounted) return;
       Navigator.pop(context);
 
@@ -583,7 +618,18 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
     if (_reportData == null) return;
 
     try {
-      final pdfFile = await _pdfService.generateCompleteProjectReportPDF(_reportData!);
+      // Obtener datos del usuario actual
+      final user = FirebaseAuth.instance.currentUser;
+      Map<String, dynamic>? userData;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        userData = userDoc.data();
+      }
+
+      final pdfFile = await _pdfService.generateCompleteProjectReportPDF(_reportData!, userData);
       await _pdfService.sharePDF(pdfFile, widget.projectData['name'] ?? 'Proyecto');
     } catch (e) {
       if (!mounted) return;

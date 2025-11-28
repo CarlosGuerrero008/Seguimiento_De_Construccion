@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ProjectChatbotScreen extends StatefulWidget {
   final String projectId;
@@ -30,9 +31,13 @@ class _ProjectChatbotScreenState extends State<ProjectChatbotScreen> {
   @override
   void initState() {
     super.initState();
+    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    if (apiKey.isEmpty) {
+      throw Exception('GEMINI_API_KEY no está configurada en el archivo .env');
+    }
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash',
-      apiKey: 'AIzaSyAh6dcpBBUs82UdyUt_ESbzV6ni8qWBks8',
+      model: 'gemini-2.5-flash',
+      apiKey: apiKey,
     );
     _initializeContext();
   }

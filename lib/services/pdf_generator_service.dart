@@ -15,6 +15,7 @@ class PDFGeneratorService {
   /// Genera PDF del reporte de sección con análisis de IA
   Future<File> generateSectionReportPDF(
     Map<String, dynamic> reportData,
+    Map<String, dynamic>? userData,
   ) async {
     final pdf = pw.Document();
 
@@ -29,6 +30,10 @@ class PDFGeneratorService {
         build: (context) => [
           _buildHeader(reportData, fontBold),
           pw.SizedBox(height: 20),
+          if (userData != null) ...[
+            _buildUserInfo(userData, font, fontBold),
+            pw.SizedBox(height: 20),
+          ],
           _buildProjectInfo(reportData, font, fontBold),
           pw.SizedBox(height: 20),
           _buildProgressSection(reportData, font, fontBold),
@@ -52,6 +57,66 @@ class PDFGeneratorService {
     );
     await file.writeAsBytes(await pdf.save());
     return file;
+  }
+
+  pw.Widget _buildUserInfo(
+    Map<String, dynamic> userData,
+    pw.Font font,
+    pw.Font fontBold,
+  ) {
+    return pw.Container(
+      decoration: pw.BoxDecoration(
+        color: PdfColors.grey100,
+        borderRadius: pw.BorderRadius.circular(8),
+        border: pw.Border.all(color: PdfColors.grey300),
+      ),
+      padding: pw.EdgeInsets.all(16),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'INFORMACIÓN DEL DIRECTOR DE OBRA',
+            style: pw.TextStyle(font: fontBold, fontSize: 14, color: PdfColors.blue900),
+          ),
+          pw.Divider(color: PdfColors.blue200),
+          pw.SizedBox(height: 8),
+          pw.Row(
+            children: [
+              pw.Expanded(
+                child: _buildInfoRow(
+                  'Director:',
+                  '${userData['name'] ?? ''} ${userData['apellidos'] ?? ''}'.trim(),
+                  font,
+                  fontBold,
+                ),
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 4),
+          pw.Row(
+            children: [
+              pw.Expanded(
+                child: _buildInfoRow(
+                  'Empresa:',
+                  userData['company'] ?? 'N/A',
+                  font,
+                  fontBold,
+                ),
+              ),
+              pw.SizedBox(width: 20),
+              pw.Expanded(
+                child: _buildInfoRow(
+                  'Cargo:',
+                  userData['position'] ?? 'Director de Obra',
+                  font,
+                  fontBold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   pw.Widget _buildHeader(Map<String, dynamic> data, pw.Font fontBold) {
@@ -706,6 +771,7 @@ class PDFGeneratorService {
   /// Genera PDF del reporte completo del proyecto
   Future<File> generateCompleteProjectReportPDF(
     Map<String, dynamic> reportData,
+    Map<String, dynamic>? userData,
   ) async {
     final pdf = pw.Document();
 
@@ -720,6 +786,10 @@ class PDFGeneratorService {
         build: (context) => [
           _buildProjectHeader(reportData, fontBold),
           pw.SizedBox(height: 20),
+          if (userData != null) ...[
+            _buildUserInfo(userData, font, fontBold),
+            pw.SizedBox(height: 20),
+          ],
           _buildProjectGeneralInfo(reportData, font, fontBold),
           pw.SizedBox(height: 20),
           _buildProjectStats(reportData, font, fontBold),
@@ -1055,12 +1125,13 @@ class PDFGeneratorService {
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.center,
               children: [
-                pw.Icon(
-                  delayDays > 0
-                      ? pw.IconData(0xe88e) // warning icon
-                      : pw.IconData(0xe876), // check icon
-                  color: delayDays > 0 ? PdfColors.red : PdfColors.green,
-                  size: 20,
+                pw.Text(
+                  delayDays > 0 ? '⚠' : '✓',
+                  style: pw.TextStyle(
+                    font: fontBold,
+                    fontSize: 20,
+                    color: delayDays > 0 ? PdfColors.red : PdfColors.green,
+                  ),
                 ),
                 pw.SizedBox(width: 8),
                 pw.Text(
@@ -1210,10 +1281,13 @@ class PDFGeneratorService {
             ),
             child: pw.Row(
               children: [
-                pw.Icon(
-                  pw.IconData(0xe86c), // info icon
-                  color: PdfColors.blue,
-                  size: 16,
+                pw.Text(
+                  'ℹ',
+                  style: pw.TextStyle(
+                    font: fontBold,
+                    fontSize: 16,
+                    color: PdfColors.blue,
+                  ),
                 ),
                 pw.SizedBox(width: 8),
                 pw.Expanded(
@@ -1278,24 +1352,75 @@ class PDFGeneratorService {
     pw.Font font,
     pw.Font fontBold,
   ) {
-    final sections = List<Map<String, dynamic>>.from(
+    final allSections = List<Map<String, dynamic>>.from(
       data['sectionsAnalysis'] ?? [],
     );
 
-    if (sections.isEmpty) {
+    if (allSections.isEmpty) {
       return pw.Container();
     }
+
+    // Limitar a un máximo de 5 secciones para evitar PDFs demasiado largos
+    final sections = allSections.take(5).toList();
+    final hasMore = allSections.length > 5;
 
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          'ANÁLISIS POR SECCIONES',
-          style: pw.TextStyle(font: fontBold, fontSize: 16),
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Text(
+              'ANÁLISIS POR SECCIONES',
+              style: pw.TextStyle(font: fontBold, fontSize: 16),
+            ),
+            if (hasMore)
+              pw.Container(
+                padding: pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.purple100,
+                  borderRadius: pw.BorderRadius.circular(4),
+                ),
+                child: pw.Text(
+                  'Mostrando 5 de ${allSections.length}',
+                  style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.purple900),
+                ),
+              ),
+          ],
         ),
         pw.Divider(color: PdfColors.purple),
         pw.SizedBox(height: 10),
         ...sections.map((section) => _buildSectionCard(section, font, fontBold)),
+        if (hasMore) ...[
+          pw.SizedBox(height: 12),
+          pw.Container(
+            padding: pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.purple50,
+              borderRadius: pw.BorderRadius.circular(6),
+              border: pw.Border.all(color: PdfColors.purple200),
+            ),
+            child: pw.Row(
+              children: [
+                pw.Text(
+                  'ℹ',
+                  style: pw.TextStyle(
+                    font: fontBold,
+                    fontSize: 14,
+                    color: PdfColors.purple,
+                  ),
+                ),
+                pw.SizedBox(width: 8),
+                pw.Expanded(
+                  child: pw.Text(
+                    'Se omitieron ${allSections.length - 5} secciones adicionales. Para ver el reporte completo, genere reportes individuales por sección.',
+                    style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.purple900),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }

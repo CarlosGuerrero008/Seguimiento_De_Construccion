@@ -2,19 +2,25 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class GeminiService {
-  static const String _apiKey = 'AIzaSyAh6dcpBBUs82UdyUt_ESbzV6ni8qWBks8';
+  static String get _apiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
+  static const String kGeminiFallbackModel = 'gemini-2.5-flash';
   late final GenerativeModel _model;
   late final GenerativeModel _visionModel;
 
   GeminiService() {
+    if (_apiKey.isEmpty) {
+      throw Exception('GEMINI_API_KEY no está configurada en el archivo .env');
+    }
+
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: kGeminiFallbackModel,
       apiKey: _apiKey,
     );
     _visionModel = GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: kGeminiFallbackModel,
       apiKey: _apiKey,
     );
   }
@@ -639,7 +645,9 @@ TONO: Formal, técnico, objetivo, basado en datos y evidencia.
 ESTRUCTURA: Seguir el formato de informes técnicos de avance de obra para contratos públicos.
 ''';
 
+      print('📤 Enviando prompt a Gemini (${projectPrompt.length} caracteres)...');
       final response = await _model.generateContent([Content.text(projectPrompt)]);
+      print('✅ Respuesta recibida de Gemini');
 
       return {
         'projectName': projectData['name'],
@@ -661,8 +669,9 @@ ESTRUCTURA: Seguir el formato de informes técnicos de avance de obra para contr
         'executiveSummary': response.text ?? 'No se pudo generar el resumen',
         'generatedAt': DateTime.now().toIso8601String(),
       };
-    } catch (e) {
-      print('Error generando reporte completo: $e');
+    } catch (e, stackTrace) {
+      print('❌ Error generando reporte completo: $e');
+      print('Stack trace: $stackTrace');
 
       // Calcular estadísticas básicas incluso si falla la IA
       double totalProgress = 0;

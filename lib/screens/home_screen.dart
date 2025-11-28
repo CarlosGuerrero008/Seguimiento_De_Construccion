@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:typed_data';
+import 'dart:async';
 import 'login_screen.dart';
 import 'profile_settings_screen.dart';
 import 'project_dashboard_screen.dart';
@@ -28,12 +29,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   String? selectedProject;
   bool showProjectDetails = false;
-  bool isDarkMode = false;
   OverlayEntry? _profileOverlayEntry;
   Uint8List? _profileImageBytes;
-  bool showInviteSection = false;
   bool showProjectDetailsExpanded = false;
   String _searchQuery = '';
+  Timer? _projectSearchDebounce;
 
   Widget _buildProjectDetailsView(String projectId) {
     return FutureBuilder<DocumentSnapshot>(
@@ -66,21 +66,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  final _emailController = TextEditingController();
-  String? _selectedRole;
-
   @override
   void initState() {
     super.initState();
-    _loadThemePreference();
     _loadProfileImage();
-  }
-
-  Future<void> _loadThemePreference() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      isDarkMode = prefs.getBool('isDarkMode') ?? false;
-    });
   }
 
   Future<void> _deleteProject(Map<String, dynamic> projectData) async {
@@ -133,7 +122,6 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         showProjectDetails = false;
         selectedProject = null;
-        showInviteSection = false;
         showProjectDetailsExpanded = false;
       });
     } catch (e) {
@@ -198,6 +186,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showProfilePanel(BuildContext context) {
     _removeOverlay();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     _profileOverlayEntry = OverlayEntry(
       builder: (context) {
         return Stack(
@@ -216,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Container(
                   width: 350,
                   decoration: BoxDecoration(
-                    color: isDarkMode ? Colors.grey[900] : Colors.white,
+                    color: isDark ? Colors.grey[900] : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -238,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ? Icon(Icons.person, size: 30)
                                       : null,
                               backgroundColor:
-                                  isDarkMode
+                                  isDark
                                       ? Colors.blueGrey[700]
                                       : Colors.blue.shade100,
                             ),
@@ -252,7 +242,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     color:
-                                        isDarkMode
+                                        isDark
                                             ? Colors.white
                                             : Colors.black,
                                   ),
@@ -263,7 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: TextStyle(
                                     fontSize: 14,
                                     color:
-                                        isDarkMode
+                                        isDark
                                             ? Colors.grey[400]
                                             : Colors.grey[600],
                                   ),
@@ -276,7 +266,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ProfileOption(
                         icon: Icons.settings,
                         text: "Administrar tu cuenta",
-                        isDarkMode: isDarkMode,
                         onTap: () {
                           _removeOverlay();
                           Navigator.push(
@@ -285,8 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               builder: (context) => ProfileSettingsScreen(),
                             ),
                           ).then((updated) {
-                            // Recargar tema y perfil cuando regrese de configuraciones
-                            _loadThemePreference();
+                            // Recargar perfil cuando regrese de configuraciones
                             _loadProfileImage();
                             setState(() {});
                           });
@@ -297,7 +285,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.exit_to_app,
                         text: "Cerrar sesión",
                         color: Colors.red,
-                        isDarkMode: isDarkMode,
                         onTap: () {
                           _removeOverlay();
                           logout(context);
@@ -363,9 +350,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: isDarkMode ? _buildDarkTheme() : _buildLightTheme(),
-      child: Scaffold(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
         appBar: AppBar(
           title: Text("Seguimientos"),
           actions: [
@@ -426,7 +413,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ? Icon(Icons.person, size: 18)
                           : null,
                   backgroundColor:
-                      isDarkMode ? Colors.blueGrey[700] : Colors.blue.shade100,
+                      isDark ? Colors.blueGrey[700] : Colors.blue.shade100,
                 ),
               ),
             ),
@@ -442,7 +429,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-      ),
     );
   }
 
@@ -450,44 +436,14 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _removeOverlay();
     _searchController.dispose();
+    _projectSearchDebounce?.cancel();
     super.dispose();
   }
 
-  ThemeData _buildLightTheme() {
-    return ThemeData(
-      brightness: Brightness.light,
-      primaryColor: Colors.blue,
-      scaffoldBackgroundColor: Colors.white,
-      appBarTheme: AppBarTheme(
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-      ),
-      cardTheme: CardThemeData(
-        color: Colors.white,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-
-  ThemeData _buildDarkTheme() {
-    return ThemeData(
-      brightness: Brightness.dark,
-      primaryColor: Colors.blueGrey[800],
-      scaffoldBackgroundColor: Colors.grey[900],
-      appBarTheme: AppBarTheme(
-        backgroundColor: Colors.blueGrey[800],
-        foregroundColor: Colors.white,
-      ),
-      cardTheme: CardThemeData(
-        color: Colors.grey[800],
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
 
   Widget _buildProjectList() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -496,7 +452,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDarkMode ? Colors.grey[850] : Colors.white,
+              color: isDark ? Colors.grey[850] : Colors.white,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
@@ -508,8 +464,16 @@ class _HomeScreenState extends State<HomeScreen> {
             child: TextField(
               controller: _searchController,
               onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.toLowerCase();
+                // Cancelar búsqueda anterior
+                _projectSearchDebounce?.cancel();
+
+                // Esperar 300ms después de que el usuario deja de escribir
+                _projectSearchDebounce = Timer(Duration(milliseconds: 300), () {
+                  if (mounted) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  }
                 });
               },
               decoration: InputDecoration(
@@ -527,7 +491,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       )
                     : null,
                 filled: true,
-                fillColor: isDarkMode ? Colors.grey[800] : Colors.grey[100],
+                fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(30),
                   borderSide: BorderSide.none,
@@ -562,7 +526,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(double.infinity, 56),
                 backgroundColor:
-                    isDarkMode ? Colors.blueGrey[700] : Colors.blue,
+                    isDark ? Colors.blueGrey[700] : Colors.blue,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -657,6 +621,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildProjectCard(Map<String, dynamic> projectData, String projectId) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final projectName = projectData['name'] ?? 'Sin nombre';
     final projectType = projectData['type'] ?? 'No especificado';
     final description = projectData['description'] ?? 'Sin descripción';
@@ -698,8 +663,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(16),
                 gradient: LinearGradient(
                   colors: [
-                    isDarkMode ? Colors.grey[800]! : Colors.white,
-                    isDarkMode ? Colors.grey[850]! : Colors.blue.shade50,
+                    isDark ? Colors.grey[800]! : Colors.white,
+                    isDark ? Colors.grey[850]! : Colors.blue.shade50,
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -719,7 +684,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: isDarkMode ? Colors.white : Colors.black87,
+                              color: isDark ? Colors.white : Colors.black87,
                             ),
                           ),
                         ),
@@ -747,7 +712,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       description,
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                        color: isDark ? Colors.grey[400] : Colors.grey[700],
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -763,7 +728,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           '$workers trabajadores',
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
                           ),
                         ),
                         SizedBox(width: 16),
@@ -773,7 +738,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           '$sectionCount secciones',
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
                           ),
                         ),
                       ],
@@ -793,7 +758,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                                 ),
                               ),
                               Text(
@@ -834,6 +799,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildProjectDetails(Map<String, dynamic> projectData) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       // Cambiamos ListView por Column
       children: [
@@ -847,7 +814,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   setState(() {
                     showProjectDetails = false;
                     selectedProject = null;
-                    showInviteSection = false;
                     showProjectDetailsExpanded = false;
                   });
                 },
@@ -867,7 +833,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-        Divider(color: isDarkMode ? Colors.grey[700] : Colors.grey[300]),
+        Divider(color: isDark ? Colors.grey[700] : Colors.grey[300]),
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -875,85 +841,13 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               // Botón para invitar usuarios (movido al inicio)
               if (projectData['adminId'] == user?.uid)
-                Column(
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          showInviteSection = !showInviteSection;
-                          if (!showInviteSection) {
-                            // Limpiar campos al cerrar
-                            _emailController.clear();
-                            _selectedRole = null;
-                          }
-                        });
-                      },
-                      icon: Icon(showInviteSection ? Icons.keyboard_arrow_up : Icons.person_add),
-                      label: Text('Invitar Usuario al Proyecto'),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: Size(double.infinity, 50),
-                        backgroundColor: isDarkMode ? Colors.blueGrey[700] : Colors.blue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                    if (showInviteSection)
-                      Container(
-                        padding: EdgeInsets.all(16.0),
-                        margin: EdgeInsets.only(top: 8.0, bottom: 16.0),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: isDarkMode ? Colors.grey[700]! : Colors.grey,
-                          ),
-                          borderRadius: BorderRadius.circular(8.0),
-                          color: isDarkMode ? Colors.grey[850] : Colors.grey[50],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            TextField(
-                              controller: _emailController,
-                              decoration: InputDecoration(
-                                labelText: 'Correo Electrónico del Usuario',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.email),
-                              ),
-                            ),
-                            SizedBox(height: 12.0),
-                            DropdownButtonFormField<String>(
-                              value: _selectedRole,
-                              items: ['contratista', 'supervisor'].map((role) {
-                                return DropdownMenuItem(
-                                  value: role,
-                                  child: Text(role),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedRole = value;
-                                });
-                              },
-                              decoration: InputDecoration(
-                                labelText: 'Rol del Usuario',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.work),
-                              ),
-                            ),
-                            SizedBox(height: 16.0),
-                            ElevatedButton(
-                              onPressed: _inviteUser,
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: Size(double.infinity, 45),
-                              ),
-                              child: Text('Enviar Invitación'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    SizedBox(height: 16),
-                  ],
+                _InviteUserSection(
+                  projectId: selectedProject!,
+                  onInviteSent: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Invitación enviada.')),
+                    );
+                  },
                 ),
               // Sección colapsable de detalles del proyecto
               Column(
@@ -968,7 +862,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: Text('Detalles del Proyecto'),
                     style: ElevatedButton.styleFrom(
                       minimumSize: Size(double.infinity, 50),
-                      backgroundColor: isDarkMode ? Colors.blueGrey[700] : Colors.blue,
+                      backgroundColor: isDark ? Colors.blueGrey[700] : Colors.blue,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -981,10 +875,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       margin: EdgeInsets.only(top: 8.0, bottom: 16.0),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: isDarkMode ? Colors.grey[700]! : Colors.grey,
+                          color: isDark ? Colors.grey[700]! : Colors.grey,
                         ),
                         borderRadius: BorderRadius.circular(8.0),
-                        color: isDarkMode ? Colors.grey[850] : Colors.grey[50],
+                        color: isDark ? Colors.grey[850] : Colors.grey[50],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -992,19 +886,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           DetailItem(
                             label: "Tipo de Obra:",
                             value: projectData['type'] ?? "No especificado",
-                            isDarkMode: isDarkMode,
                           ),
                           SizedBox(height: 16),
                           DetailItem(
                             label: "Descripción:",
                             value: projectData['description'] ?? "Sin descripción",
-                            isDarkMode: isDarkMode,
                           ),
                           SizedBox(height: 16),
                           DetailItem(
                             label: "Trabajadores:",
-                            value: projectData['workers'] ?? "No especificado",
-                            isDarkMode: isDarkMode,
+                            value: projectData['workers']?.toString() ?? "No especificado",
                           ),
                           SizedBox(height: 16),
                           DetailItem(
@@ -1017,7 +908,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                         .toString()
                                         .split(' ')[0]
                                     : "No especificada",
-                            isDarkMode: isDarkMode,
                           ),
                           SizedBox(height: 16),
                           DetailItem(
@@ -1030,7 +920,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                         .toString()
                                         .split(' ')[0]
                                     : "No especificada",
-                            isDarkMode: isDarkMode,
                           ),
                         ],
                       ),
@@ -1057,7 +946,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: ElevatedButton.styleFrom(
                     minimumSize: Size(double.infinity, 55),
                     backgroundColor:
-                        isDarkMode ? Colors.blueGrey[700] : Colors.blue,
+                        isDark ? Colors.blueGrey[700] : Colors.blue,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -1084,7 +973,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: ElevatedButton.styleFrom(
                     minimumSize: Size(double.infinity, 55),
                     backgroundColor:
-                        isDarkMode ? Colors.green[700] : Colors.green,
+                        isDark ? Colors.green[700] : Colors.green,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -1123,7 +1012,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: ElevatedButton.styleFrom(
                         minimumSize: Size(0, 55),
                         backgroundColor:
-                            isDarkMode ? Colors.purple[700] : Colors.purple,
+                            isDark ? Colors.purple[700] : Colors.purple,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -1153,7 +1042,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: ElevatedButton.styleFrom(
                         minimumSize: Size(0, 55),
                         backgroundColor:
-                            isDarkMode ? Colors.orange[700] : Colors.orange,
+                            isDark ? Colors.orange[700] : Colors.orange,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -1171,70 +1060,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _inviteUser() async {
-    String email = _emailController.text.trim();
-    String? role = _selectedRole;
-
-    if (email.isNotEmpty && role != null && selectedProject != null) {
-      try {
-        // 1. Buscar al usuario por correo electrónico
-        final userSnapshot =
-            await FirebaseFirestore.instance
-                .collection(
-                  'users',
-                ) //  Asegúrate de que tu colección de usuarios se llama 'users'
-                .where('email', isEqualTo: email)
-                .get();
-
-        if (userSnapshot.docs.isEmpty) {
-          // 2. Manejar el caso de usuario no encontrado
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Usuario no encontrado.')));
-          return; //  Detener la ejecución si el usuario no existe
-        }
-
-        //  Si llegamos aquí, el usuario existe.  Obtenemos su ID.
-        final invitedUserId = userSnapshot.docs.first.id;
-
-        //  3. Crear la invitación en la colección 'invitations'
-        await FirebaseFirestore.instance.collection('invitations').add({
-          'projectId': selectedProject, //  Ahora contiene el ID del proyecto
-          'userId': invitedUserId,
-          'role': role,
-          'status': 'pending', //  Estado inicial de la invitación
-          'invitedBy':
-              user!.uid, // Opcional: ID del usuario que envió la invitación
-          'invitedAt':
-              FieldValue.serverTimestamp(), // Opcional: Fecha y hora de la invitación
-        });
-
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Invitación enviada.')));
-
-        //  4. Limpiar los campos después de enviar la invitación
-        _emailController.clear();
-        setState(() {
-          _selectedRole = null;
-        });
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al enviar la invitación: $e')),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Por favor, ingresa el correo electrónico, selecciona el rol y asegúrate de haber seleccionado un proyecto.',
-          ),
-        ),
-      );
-    }
-  }
-
-  // M\u00e9todos para gesti\u00f3n de secciones del proyecto
+  // Métodos para gestión de secciones del proyecto
   Widget _buildProgressSection() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
@@ -1537,5 +1363,695 @@ class _HomeScreenState extends State<HomeScreen> {
     if (result == true) {
       setState(() {});
     }
+  }
+}
+
+// Widget separado para la sección de invitar usuarios
+class _InviteUserSection extends StatefulWidget {
+  final String projectId;
+  final VoidCallback onInviteSent;
+
+  const _InviteUserSection({
+    Key? key,
+    required this.projectId,
+    required this.onInviteSent,
+  }) : super(key: key);
+
+  @override
+  _InviteUserSectionState createState() => _InviteUserSectionState();
+}
+
+class _InviteUserSectionState extends State<_InviteUserSection> with SingleTickerProviderStateMixin {
+  final TextEditingController _emailController = TextEditingController();
+  String? _selectedRole;
+  String? _selectedLinkRole;
+  bool _showEmailSuggestions = false;
+  List<Map<String, dynamic>> _emailSuggestions = [];
+  Timer? _debounceTimer;
+  bool _isExpanded = false;
+  late TabController _tabController;
+  String? _generatedLink;
+  bool _isGeneratingLink = false;
+  String? _currentLinkToken;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _debounceTimer?.cancel();
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _searchUsers(String query) {
+    _debounceTimer?.cancel();
+
+    if (query.isEmpty) {
+      setState(() {
+        _showEmailSuggestions = false;
+        _emailSuggestions = [];
+      });
+      return;
+    }
+
+    _debounceTimer = Timer(Duration(milliseconds: 500), () async {
+      try {
+        final usersSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isGreaterThanOrEqualTo: query)
+            .where('email', isLessThan: query + 'z')
+            .limit(5)
+            .get();
+
+        if (mounted) {
+          setState(() {
+            _emailSuggestions = usersSnapshot.docs
+                .map((doc) => {
+                      'id': doc.id,
+                      'email': doc.data()['email'] ?? '',
+                      'name': doc.data()['name'] ?? '',
+                    })
+                .toList();
+            _showEmailSuggestions = _emailSuggestions.isNotEmpty;
+          });
+        }
+      } catch (e) {
+        print('Error buscando usuarios: $e');
+      }
+    });
+  }
+
+  Future<void> _inviteUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+    String email = _emailController.text.trim();
+    String? role = _selectedRole;
+
+    if (email.isEmpty || role == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Por favor, completa todos los campos'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
+
+      if (userSnapshot.docs.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Usuario no encontrado.')),
+        );
+        return;
+      }
+
+      final invitedUserId = userSnapshot.docs.first.id;
+
+      await FirebaseFirestore.instance.collection('invitations').add({
+        'projectId': widget.projectId,
+        'userId': invitedUserId,
+        'role': role,
+        'status': 'pending',
+        'invitedBy': user!.uid,
+        'invitedAt': FieldValue.serverTimestamp(),
+      });
+
+      widget.onInviteSent();
+
+      setState(() {
+        _emailController.clear();
+        _selectedRole = null;
+        _showEmailSuggestions = false;
+        _emailSuggestions = [];
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Invitación enviada exitosamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al enviar la invitación: $e')),
+      );
+    }
+  }
+
+  Future<void> _generateInvitationLink() async {
+    final user = FirebaseAuth.instance.currentUser;
+    String? role = _selectedLinkRole;
+
+    if (role == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Por favor, selecciona un rol para el link'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isGeneratingLink = true;
+    });
+
+    try {
+      // Generar token único
+      final token = DateTime.now().millisecondsSinceEpoch.toString() +
+                   (user!.uid.substring(0, 5));
+
+      // Calcular fecha de expiración (7 días)
+      final expiresAt = DateTime.now().add(Duration(days: 7));
+
+      // Guardar link en Firestore
+      await FirebaseFirestore.instance.collection('invitation_links').doc(token).set({
+        'projectId': widget.projectId,
+        'role': role,
+        'createdBy': user.uid,
+        'createdAt': FieldValue.serverTimestamp(),
+        'expiresAt': expiresAt,
+        'maxUses': 10,
+        'usedCount': 0,
+        'isActive': true,
+      });
+
+      // Generar el link (puedes personalizarlo con tu dominio)
+      final link = 'seguimiento-construccion://invite?token=$token';
+
+      setState(() {
+        _generatedLink = link;
+        _currentLinkToken = token;
+        _isGeneratingLink = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Link de invitación generado exitosamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      setState(() {
+        _isGeneratingLink = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al generar el link: $e')),
+      );
+    }
+  }
+
+  Future<void> _copyToClipboard() async {
+    if (_generatedLink != null) {
+      await Clipboard.setData(ClipboardData(text: _generatedLink!));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Link copiado al portapapeles'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Future<void> _shareLink() async {
+    if (_generatedLink != null) {
+      // Aquí puedes usar share_plus package
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Link: $_generatedLink'),
+          duration: Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  Widget _buildEmailTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 16),
+          TextField(
+            controller: _emailController,
+            decoration: InputDecoration(
+              labelText: 'Correo Electrónico del Usuario',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.email),
+              suffixIcon: _emailController.text.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(Icons.clear),
+                      onPressed: () {
+                        setState(() {
+                          _emailController.clear();
+                          _showEmailSuggestions = false;
+                          _emailSuggestions = [];
+                        });
+                      },
+                    )
+                  : null,
+            ),
+            onChanged: _searchUsers,
+          ),
+          if (_showEmailSuggestions && _emailSuggestions.isNotEmpty)
+            Container(
+              margin: EdgeInsets.only(top: 4),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[800] : Colors.white,
+                border: Border.all(
+                  color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              constraints: BoxConstraints(maxHeight: 200),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _emailSuggestions.length,
+                itemBuilder: (context, index) {
+                  final suggestion = _emailSuggestions[index];
+                  return ListTile(
+                    dense: true,
+                    leading: CircleAvatar(
+                      radius: 16,
+                      backgroundColor: Colors.blue,
+                      child: Text(
+                        suggestion['email'][0].toUpperCase(),
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                    ),
+                    title: Text(
+                      suggestion['email'],
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    subtitle: suggestion['name'].isNotEmpty
+                        ? Text(
+                            suggestion['name'],
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                          )
+                        : null,
+                    onTap: () {
+                      setState(() {
+                        _emailController.text = suggestion['email'];
+                        _showEmailSuggestions = false;
+                        _emailSuggestions = [];
+                      });
+                    },
+                  );
+                },
+              ),
+            ),
+          SizedBox(height: 12.0),
+          DropdownButtonFormField<String>(
+            value: _selectedRole,
+            items: ['contratista', 'supervisor'].map((role) {
+              return DropdownMenuItem(
+                value: role,
+                child: Text(role),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedRole = value;
+              });
+            },
+            decoration: InputDecoration(
+              labelText: 'Rol del Usuario',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.work),
+            ),
+          ),
+          SizedBox(height: 16.0),
+          ElevatedButton.icon(
+            onPressed: _inviteUser,
+            icon: Icon(Icons.send),
+            label: Text('Enviar Invitación'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: Size(double.infinity, 50),
+              backgroundColor: isDark ? Colors.blue[700] : Colors.blue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLinkTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 16),
+          // Información
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.blue[900]!.withOpacity(0.2) : Colors.blue[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isDark ? Colors.blue[700]! : Colors.blue[200]!,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: isDark ? Colors.blue[300] : Colors.blue[700],
+                  size: 24,
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Genera un link de invitación que podrás compartir. El link expira en 7 días y permite hasta 10 usos.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.blue[200] : Colors.blue[900],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 16),
+          // Selector de rol
+          DropdownButtonFormField<String>(
+            value: _selectedLinkRole,
+            items: ['contratista', 'supervisor'].map((role) {
+              return DropdownMenuItem(
+                value: role,
+                child: Text(role),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedLinkRole = value;
+              });
+            },
+            decoration: InputDecoration(
+              labelText: 'Rol para este Link',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.work_outline),
+              helperText: 'Selecciona el rol que tendrán los usuarios invitados',
+            ),
+          ),
+          SizedBox(height: 16),
+          // Botón generar
+          ElevatedButton.icon(
+            onPressed: _isGeneratingLink ? null : _generateInvitationLink,
+            icon: _isGeneratingLink
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Icon(Icons.link),
+            label: Text(_isGeneratingLink ? 'Generando...' : 'Generar Link de Invitación'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: Size(double.infinity, 50),
+              backgroundColor: isDark ? Colors.green[700] : Colors.green,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+          // Link generado
+          if (_generatedLink != null) ...[
+            SizedBox(height: 20),
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [Colors.green[900]!.withOpacity(0.3), Colors.green[800]!.withOpacity(0.2)]
+                      : [Colors.green[50]!, Colors.green[100]!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? Colors.green[700]! : Colors.green[300]!,
+                  width: 2,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        color: isDark ? Colors.green[300] : Colors.green[700],
+                        size: 28,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Link Generado',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.green[300] : Colors.green[800],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[850] : Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _generatedLink!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontFamily: 'monospace',
+                              color: isDark ? Colors.green[200] : Colors.green[900],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        IconButton(
+                          icon: Icon(Icons.copy, size: 20),
+                          onPressed: _copyToClipboard,
+                          tooltip: 'Copiar',
+                          color: isDark ? Colors.blue[300] : Colors.blue[700],
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _copyToClipboard,
+                          icon: Icon(Icons.copy),
+                          label: Text('Copiar Link'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: isDark ? Colors.green[300] : Colors.green[700],
+                            side: BorderSide(
+                              color: isDark ? Colors.green[700]! : Colors.green[300]!,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _shareLink,
+                          icon: Icon(Icons.share),
+                          label: Text('Compartir'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isDark ? Colors.green[700] : Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+                  Divider(color: isDark ? Colors.grey[700] : Colors.grey[300]),
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 16,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Expira en 7 días',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.people_outline,
+                            size: 16,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Máx. 10 usos',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      children: [
+        ElevatedButton.icon(
+          onPressed: () {
+            setState(() {
+              _isExpanded = !_isExpanded;
+              if (!_isExpanded) {
+                _emailController.clear();
+                _selectedRole = null;
+                _selectedLinkRole = null;
+                _showEmailSuggestions = false;
+                _emailSuggestions = [];
+                _generatedLink = null;
+                _currentLinkToken = null;
+              }
+            });
+          },
+          icon: Icon(_isExpanded ? Icons.keyboard_arrow_up : Icons.person_add),
+          label: Text('Invitar Usuario al Proyecto'),
+          style: ElevatedButton.styleFrom(
+            minimumSize: Size(double.infinity, 50),
+            backgroundColor: isDark ? Colors.blueGrey[700] : Colors.blue,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+        if (_isExpanded)
+          Container(
+            padding: EdgeInsets.all(16.0),
+            margin: EdgeInsets.only(top: 8.0, bottom: 16.0),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: isDark ? Colors.grey[700]! : Colors.grey,
+              ),
+              borderRadius: BorderRadius.circular(8.0),
+              color: isDark ? Colors.grey[850] : Colors.grey[50],
+            ),
+            child: Column(
+              children: [
+                // TabBar
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey[800] : Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicator: BoxDecoration(
+                      color: isDark ? Colors.blue[700] : Colors.blue,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    labelColor: Colors.white,
+                    unselectedLabelColor: isDark ? Colors.grey[400] : Colors.grey[700],
+                    tabs: [
+                      Tab(
+                        icon: Icon(Icons.email),
+                        text: 'Por Email',
+                      ),
+                      Tab(
+                        icon: Icon(Icons.link),
+                        text: 'Por Link',
+                      ),
+                    ],
+                  ),
+                ),
+                // TabBarView
+                SizedBox(
+                  height: _generatedLink != null && _tabController.index == 1 ? 550 : 350,
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildEmailTab(),
+                      _buildLinkTab(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        SizedBox(height: 16),
+      ],
+    );
   }
 }

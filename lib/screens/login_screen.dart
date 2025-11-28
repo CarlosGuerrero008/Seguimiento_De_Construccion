@@ -3,8 +3,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'home_screen.dart';
+import 'invitation_handler_screen.dart';
 
 class LoginScreen extends StatefulWidget {
+  final String? invitationToken;
+
+  const LoginScreen({
+    Key? key,
+    this.invitationToken,
+  }) : super(key: key);
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -79,10 +87,20 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => HomeScreen()),
-      );
+      // Si hay un token de invitación, redirigir a la pantalla de validación
+      if (widget.invitationToken != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => InvitationHandlerScreen(token: widget.invitationToken!),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => HomeScreen()),
+        );
+      }
     } on FirebaseAuthException catch (e) {
       String errorMessage;
       switch (e.code) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io';
@@ -444,7 +445,18 @@ class _AIReportScreenState extends State<AIReportScreen> {
     );
 
     try {
-      final pdfFile = await _pdfService.generateSectionReportPDF(_reportData!);
+      // Obtener datos del usuario actual
+      final user = FirebaseAuth.instance.currentUser;
+      Map<String, dynamic>? userData;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        userData = userDoc.data();
+      }
+
+      final pdfFile = await _pdfService.generateSectionReportPDF(_reportData!, userData);
       Navigator.pop(context);
 
       showDialog(
@@ -497,7 +509,18 @@ class _AIReportScreenState extends State<AIReportScreen> {
     if (_reportData == null) return;
 
     try {
-      final pdfFile = await _pdfService.generateSectionReportPDF(_reportData!);
+      // Obtener datos del usuario actual
+      final user = FirebaseAuth.instance.currentUser;
+      Map<String, dynamic>? userData;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        userData = userDoc.data();
+      }
+
+      final pdfFile = await _pdfService.generateSectionReportPDF(_reportData!, userData);
       await _pdfService.sharePDF(pdfFile, widget.sectionName);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

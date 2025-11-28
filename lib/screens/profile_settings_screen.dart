@@ -8,7 +8,9 @@ import 'dart:typed_data';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../widgets/image_service.dart';
+import '../providers/theme_provider.dart';
 import 'login_screen.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
@@ -37,7 +39,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
   File? _imageFile;
   Uint8List? _profileImageBytes;
   bool _isLoading = false;
-  bool _isDarkMode = false;
   bool _notificationsEnabled = true;
   bool _emailNotifications = true;
   bool _pushNotifications = true;
@@ -93,7 +94,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
       _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
       _emailNotifications = prefs.getBool('emailNotifications') ?? true;
       _pushNotifications = prefs.getBool('pushNotifications') ?? true;
@@ -773,17 +773,20 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
             elevation: 2,
             child: Column(
               children: [
-                ListTile(
-                  leading: Icon(Icons.brightness_6),
-                  title: Text('Tema'),
-                  subtitle: Text(_isDarkMode ? 'Oscuro' : 'Claro'),
-                  trailing: Switch(
-                    value: _isDarkMode,
-                    onChanged: (value) {
-                      setState(() => _isDarkMode = value);
-                      _savePreference('isDarkMode', value);
-                    },
-                  ),
+                Consumer<ThemeProvider>(
+                  builder: (context, themeProvider, child) {
+                    return ListTile(
+                      leading: Icon(Icons.brightness_6),
+                      title: Text('Tema'),
+                      subtitle: Text(themeProvider.isDarkMode ? 'Oscuro' : 'Claro'),
+                      trailing: Switch(
+                        value: themeProvider.isDarkMode,
+                        onChanged: (value) {
+                          themeProvider.toggleTheme();
+                        },
+                      ),
+                    );
+                  },
                 ),
                 Divider(height: 1),
                 ListTile(
