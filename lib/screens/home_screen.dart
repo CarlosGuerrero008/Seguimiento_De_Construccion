@@ -17,6 +17,7 @@ import '../widgets/detail_item.dart';
 import '../widgets/invitation_list_panel.dart';
 import 'project_report_screen.dart';
 import 'project_chatbot_screen.dart';
+import 'project_documents_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -979,6 +980,33 @@ class _HomeScreenState extends State<HomeScreen> {
                     minimumSize: Size(double.infinity, 55),
                     backgroundColor:
                         isDark ? Colors.green[700] : Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProjectDocumentsScreen(
+                          projectId: selectedProject!,
+                          projectName: projectData['name'] ?? 'Proyecto',
+                        ),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.folder_open),
+                  label: Text("DOCUMENTACIÓN"),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(double.infinity, 55),
+                    backgroundColor:
+                        isDark ? Colors.indigo[700] : Colors.indigo,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),

@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/gemini_service.dart';
 import '../services/pdf_generator_service.dart';
+import '../services/document_service.dart';
 
 class ProjectReportScreen extends StatefulWidget {
   final String projectId;
@@ -21,12 +23,14 @@ class ProjectReportScreen extends StatefulWidget {
 class _ProjectReportScreenState extends State<ProjectReportScreen> {
   final GeminiService _geminiService = GeminiService();
   final PDFGeneratorService _pdfService = PDFGeneratorService();
+  final DocumentService _documentService = DocumentService();
 
   bool _isGenerating = false;
   bool _isCompleted = false;
   Map<String, dynamic>? _reportData;
   String _currentStep = '';
   double _progress = 0.0;
+  bool _isSavingDocument = false;
 
   @override
   Widget build(BuildContext context) {
@@ -584,6 +588,30 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
               child: Text('Cerrar'),
             ),
             ElevatedButton.icon(
+              onPressed: _isSavingDocument
+                  ? null
+                  : () => _savePdfToDocumentation(pdfFile),
+              icon: _isSavingDocument
+                  ? SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Icon(Icons.folder_open),
+              label: Text(
+                _isSavingDocument
+                    ? 'Guardando...'
+                    : 'Guardar en documentación',
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.indigo,
+              ),
+            ),
+            ElevatedButton.icon(
               onPressed: () {
                 Navigator.pop(context);
                 _pdfService.sharePDF(pdfFile, widget.projectData['name'] ?? 'Proyecto');
@@ -639,6 +667,47 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  Future<void> _savePdfToDocumentation(File pdfFile) async {
+    if (_isSavingDocument) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Debes iniciar sesión para guardar documentos.')),
+      );
+      return;
+    }
+
+    setState(() => _isSavingDocument = true);
+    try {
+      await _documentService.uploadDocument(
+        projectId: widget.projectId,
+        file: pdfFile,
+        fileName:
+            "reporte_proyecto_${widget.projectData['name'] ?? 'proyecto'}_${DateTime.now().millisecondsSinceEpoch}.pdf",
+        uploadedBy: user.uid,
+        source: 'ia',
+        description:
+            "Reporte ejecutivo generado automáticamente para el proyecto ${widget.projectData['name'] ?? ''}",
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('PDF guardado en la documentación del proyecto')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No se pudo guardar el PDF: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSavingDocument = false);
     }
   }
 }

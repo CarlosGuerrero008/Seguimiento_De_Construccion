@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'dart:io';
 import '../services/gemini_service.dart';
 import '../services/pdf_generator_service.dart';
+import '../services/document_service.dart';
 
 class AIReportScreen extends StatefulWidget {
   final String projectId;
@@ -30,12 +31,14 @@ class AIReportScreen extends StatefulWidget {
 class _AIReportScreenState extends State<AIReportScreen> {
   final GeminiService _geminiService = GeminiService();
   final PDFGeneratorService _pdfService = PDFGeneratorService();
+  final DocumentService _documentService = DocumentService();
 
   bool _isGenerating = false;
   bool _isCompleted = false;
   Map<String, dynamic>? _reportData;
   String _currentStep = '';
   double _progress = 0.0;
+  bool _isSavingDocument = false;
 
   @override
   Widget build(BuildContext context) {
@@ -471,25 +474,49 @@ class _AIReportScreenState extends State<AIReportScreen> {
             children: [
               Icon(Icons.check_circle, color: Colors.green),
               SizedBox(width: 8),
-              Text('PDF Generado'),
-            ],
+            Text('PDF Generado'),
+          ],
+        ),
+        content: Text('El reporte PDF se ha generado exitosamente.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cerrar'),
           ),
-          content: Text('El reporte PDF se ha generado exitosamente.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cerrar'),
+          ElevatedButton.icon(
+            onPressed: _isSavingDocument
+                ? null
+                : () => _savePdfToDocumentation(pdfFile),
+            icon: _isSavingDocument
+                ? SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Icon(Icons.folder_open),
+            label: Text(
+              _isSavingDocument
+                  ? 'Guardando...'
+                  : 'Guardar en documentación',
             ),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                _pdfService.sharePDF(pdfFile, widget.sectionName);
-              },
-              icon: Icon(Icons.share),
-              label: Text('Compartir'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.indigo,
             ),
-            ElevatedButton.icon(
-              onPressed: () {
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              _pdfService.sharePDF(pdfFile, widget.sectionName);
+            },
+            icon: Icon(Icons.share),
+            label: Text('Compartir'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
                 Navigator.pop(context);
                 _pdfService.printPDF(pdfFile);
               },
@@ -534,6 +561,48 @@ class _AIReportScreenState extends State<AIReportScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  Future<void> _savePdfToDocumentation(File pdfFile) async {
+    if (_isSavingDocument) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Debes iniciar sesión para guardar documentos.')),
+      );
+      return;
+    }
+
+    setState(() => _isSavingDocument = true);
+    try {
+      await _documentService.uploadDocument(
+        projectId: widget.projectId,
+        file: pdfFile,
+        fileName:
+            'reporte_${widget.sectionName}_${DateTime.now().millisecondsSinceEpoch}.pdf',
+        uploadedBy: user.uid,
+        source: 'ia',
+        sectionId: widget.sectionId,
+        description:
+            'Reporte generado automáticamente para la sección ${widget.sectionName}',
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('PDF guardado en la documentación del proyecto')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No se pudo guardar el PDF: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSavingDocument = false);
     }
   }
 }
