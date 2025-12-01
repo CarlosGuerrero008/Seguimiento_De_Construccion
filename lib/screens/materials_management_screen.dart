@@ -245,7 +245,7 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
         }
 
         return ListView.builder(
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
           itemCount: materials.length,
           itemBuilder: (context, index) {
             final doc = materials[index];
