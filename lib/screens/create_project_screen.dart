@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 class CreateProjectScreen extends StatefulWidget {
   const CreateProjectScreen({Key? key}) : super(key: key);
@@ -28,6 +30,11 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   String _selectedStatus = 'Planificado';
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now().add(Duration(days: 90));
+  
+  // Coordenadas de ubicación
+  double? _latitude;
+  double? _longitude;
+  bool _isLoadingLocation = false;
 
   final List<String> _projectTypes = ['Privada', 'Pública', 'Mixta'];
   final List<String> _projectStatuses = [
@@ -56,19 +63,24 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
         title: Text('Crear Nuevo Proyecto'),
         elevation: 0,
       ),
-      body: Form(
-        key: _formKey,
-        child: Stepper(
-          type: StepperType.horizontal,
-          currentStep: _currentStep,
-          onStepContinue: _onStepContinue,
-          onStepCancel: _onStepCancel,
-          onStepTapped: (step) => setState(() => _currentStep = step),
-          controlsBuilder: (context, details) {
-            return Padding(
-              padding: EdgeInsets.only(top: 20),
-              child: Row(
-                children: [
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: Stepper(
+            type: StepperType.horizontal,
+            currentStep: _currentStep,
+            onStepContinue: _onStepContinue,
+            onStepCancel: _onStepCancel,
+            onStepTapped: (step) => setState(() => _currentStep = step),
+            controlsBuilder: (context, details) {
+              final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+              return Padding(
+                padding: EdgeInsets.only(
+                  top: 20,
+                  bottom: bottomPadding > 0 ? bottomPadding : 16,
+                ),
+                child: Row(
+                  children: [
                   if (_currentStep < 2)
                     Expanded(
                       child: ElevatedButton(
@@ -130,30 +142,31 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                         child: Text('Atrás', style: TextStyle(fontSize: 16)),
                       ),
                     ),
-                ],
+                  ],
+                ),
+              );
+            },
+            steps: [
+              Step(
+                title: Text('Básico'),
+                isActive: _currentStep >= 0,
+                state: _currentStep > 0 ? StepState.complete : StepState.indexed,
+                content: _buildBasicInfoStep(),
               ),
-            );
-          },
-          steps: [
-            Step(
-              title: Text('Básico'),
-              isActive: _currentStep >= 0,
-              state: _currentStep > 0 ? StepState.complete : StepState.indexed,
-              content: _buildBasicInfoStep(),
-            ),
-            Step(
-              title: Text('Detalles'),
-              isActive: _currentStep >= 1,
-              state: _currentStep > 1 ? StepState.complete : StepState.indexed,
-              content: _buildDetailsStep(),
-            ),
-            Step(
-              title: Text('Confirmar'),
-              isActive: _currentStep >= 2,
-              state: _currentStep > 2 ? StepState.complete : StepState.indexed,
-              content: _buildConfirmationStep(),
-            ),
-          ],
+              Step(
+                title: Text('Detalles'),
+                isActive: _currentStep >= 1,
+                state: _currentStep > 1 ? StepState.complete : StepState.indexed,
+                content: _buildDetailsStep(),
+              ),
+              Step(
+                title: Text('Confirmar'),
+                isActive: _currentStep >= 2,
+                state: _currentStep > 2 ? StepState.complete : StepState.indexed,
+                content: _buildConfirmationStep(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -269,17 +282,79 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           ),
         ),
         SizedBox(height: 20),
-        TextFormField(
-          controller: _locationController,
-          decoration: InputDecoration(
-            labelText: 'Ubicación',
-            hintText: 'Ej: Av. Principal #123, Distrito Norte',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _locationController,
+                decoration: InputDecoration(
+                  labelText: 'Ubicación',
+                  hintText: 'Ej: Av. Principal #123, Distrito Norte',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  prefixIcon: Icon(Icons.location_on),
+                ),
+                maxLines: 2,
+                minLines: 1,
+              ),
             ),
-            prefixIcon: Icon(Icons.location_on),
-          ),
+            SizedBox(width: 8),
+            Container(
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _isLoadingLocation ? null : _getCurrentLocation,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                ),
+                child: _isLoadingLocation
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Icon(Icons.my_location),
+              ),
+            ),
+          ],
         ),
+        if (_latitude != null && _longitude != null)
+          Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green, size: 16),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Coordenadas: $_latitude, $_longitude',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.green.shade900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         SizedBox(height: 16),
         TextFormField(
           controller: _clientController,
@@ -490,18 +565,34 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
         Container(
           padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.blue.shade50,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.blue.shade900.withOpacity(0.3)
+                : Colors.blue.shade50,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.blue.shade200),
+            border: Border.all(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.blue.shade700
+                  : Colors.blue.shade200,
+            ),
           ),
           child: Row(
             children: [
-              Icon(Icons.info_outline, color: Colors.blue),
+              Icon(
+                Icons.info_outline,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.blue.shade300
+                    : Colors.blue,
+              ),
               SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'Una vez creado, serás el administrador del proyecto y podrás agregar secciones, materiales y usuarios.',
-                  style: TextStyle(fontSize: 13),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.blue.shade100
+                        : Colors.blue.shade900,
+                  ),
                 ),
               ),
             ],
@@ -562,6 +653,139 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
     }
   }
 
+  Future<void> _getCurrentLocation() async {
+    setState(() => _isLoadingLocation = true);
+
+    try {
+      // Verificar si el servicio de ubicación está habilitado
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('El servicio de ubicación está desactivado'),
+            backgroundColor: Colors.orange,
+            action: SnackBarAction(
+              label: 'Activar',
+              textColor: Colors.white,
+              onPressed: () {
+                Geolocator.openLocationSettings();
+              },
+            ),
+          ),
+        );
+        return;
+      }
+
+      // Verificar permisos
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Permiso de ubicación denegado'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Los permisos de ubicación están permanentemente denegados. Habilítalos en configuración.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
+
+      // Obtener la posición actual
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      setState(() {
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+      });
+
+      // Intentar obtener la dirección desde las coordenadas
+      try {
+        List<Placemark> placemarks = await placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+
+        if (placemarks.isNotEmpty) {
+          Placemark place = placemarks[0];
+          String address = '';
+
+          if (place.street != null && place.street!.isNotEmpty) {
+            address += place.street!;
+          }
+          if (place.subLocality != null && place.subLocality!.isNotEmpty) {
+            address += address.isNotEmpty ? ', ${place.subLocality}' : place.subLocality!;
+          }
+          if (place.locality != null && place.locality!.isNotEmpty) {
+            address += address.isNotEmpty ? ', ${place.locality}' : place.locality!;
+          }
+          if (place.administrativeArea != null &&
+              place.administrativeArea!.isNotEmpty) {
+            address += address.isNotEmpty
+                ? ', ${place.administrativeArea}'
+                : place.administrativeArea!;
+          }
+          if (place.country != null && place.country!.isNotEmpty) {
+            address += address.isNotEmpty ? ', ${place.country}' : place.country!;
+          }
+
+          if (address.isNotEmpty) {
+            _locationController.text = address;
+          } else {
+            _locationController.text =
+                'Lat: ${position.latitude.toStringAsFixed(6)}, Lng: ${position.longitude.toStringAsFixed(6)}';
+          }
+        } else {
+          _locationController.text =
+              'Lat: ${position.latitude.toStringAsFixed(6)}, Lng: ${position.longitude.toStringAsFixed(6)}';
+        }
+      } catch (e) {
+        // Si falla la geocodificación, usar solo las coordenadas
+        _locationController.text =
+            'Lat: ${position.latitude.toStringAsFixed(6)}, Lng: ${position.longitude.toStringAsFixed(6)}';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text('Ubicación obtenida exitosamente'),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al obtener ubicación: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() => _isLoadingLocation = false);
+    }
+  }
+
   Future<void> _createProject() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -589,6 +813,10 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
         'status': _selectedStatus,
         if (_locationController.text.isNotEmpty)
           'location': _locationController.text.trim(),
+        if (_latitude != null && _longitude != null) ...{
+          'latitude': _latitude,
+          'longitude': _longitude,
+        },
         if (_clientController.text.isNotEmpty)
           'client': _clientController.text.trim(),
         if (_budgetController.text.isNotEmpty)
