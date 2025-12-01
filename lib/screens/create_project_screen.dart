@@ -175,7 +175,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
         TextFormField(
           controller: _nameController,
           decoration: InputDecoration(
-            labelText: 'Nombre del Proyecto *',
+            labelText: 'Nombre del Proyecto',
             hintText: 'Ej: Edificio Residencial Los Pinos',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -193,7 +193,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
         TextFormField(
           controller: _descriptionController,
           decoration: InputDecoration(
-            labelText: 'Descripción *',
+            labelText: 'Descripción',
             hintText: 'Describe brevemente el proyecto',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -212,7 +212,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
         DropdownButtonFormField<String>(
           value: _selectedType,
           decoration: InputDecoration(
-            labelText: 'Tipo de Obra *',
+            labelText: 'Tipo de Obra',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
             ),
@@ -234,7 +234,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
         TextFormField(
           controller: _workersController,
           decoration: InputDecoration(
-            labelText: 'Número de Trabajadores *',
+            labelText: 'Número de Trabajadores',
             hintText: 'Ej: 25',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),

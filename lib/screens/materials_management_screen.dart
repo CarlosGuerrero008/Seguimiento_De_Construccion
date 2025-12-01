@@ -161,7 +161,12 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
         ),
         Text(
           label,
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[400]
+                : Colors.grey[600],
+          ),
         ),
       ],
     );
@@ -172,7 +177,12 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[400]
+                : Colors.grey[600],
+          ),
         ),
         SizedBox(height: 4),
         Text(
@@ -319,7 +329,9 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
             LinearPercentIndicator(
               lineHeight: 8.0,
               percent: (usagePercentage / 100).clamp(0, 1),
-              backgroundColor: Colors.grey[300],
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[700]
+                  : Colors.grey[300],
               progressColor: usagePercentage < 50
                   ? Colors.green
                   : usagePercentage < 90
@@ -355,13 +367,27 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
                     'Descripción:',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  Text(data['description']),
+                  Text(
+                    data['description'],
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black87,
+                    ),
+                  ),
                   SizedBox(height: 8),
                 ],
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Costo unitario:'),
+                    Text(
+                      'Costo unitario:',
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black87,
+                      ),
+                    ),
                     Text(
                       '\$${unitCost.toStringAsFixed(2)}',
                       style: TextStyle(fontWeight: FontWeight.bold),
@@ -372,7 +398,14 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Costo total planificado:'),
+                    Text(
+                      'Costo total planificado:',
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black87,
+                      ),
+                    ),
                     Text(
                       '\$${(quantityPlanned * unitCost).toStringAsFixed(2)}',
                       style: TextStyle(
@@ -386,7 +419,14 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Costo utilizado:'),
+                    Text(
+                      'Costo utilizado:',
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black87,
+                      ),
+                    ),
                     Text(
                       '\$${(quantityUsed * unitCost).toStringAsFixed(2)}',
                       style: TextStyle(
@@ -402,7 +442,14 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
                     children: [
                       Icon(Icons.store, size: 16, color: Colors.grey),
                       SizedBox(width: 8),
-                      Text('Proveedor: ${data['supplier']}'),
+                      Text(
+                        'Proveedor: ${data['supplier']}',
+                        style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black87,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -414,6 +461,11 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
                       SizedBox(width: 8),
                       Text(
                         'Entrega: ${dateFormat.format((data['deliveryDate'] as Timestamp).toDate())}',
+                        style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black87,
+                        ),
                       ),
                     ],
                   ),
@@ -423,10 +475,14 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
                 Container(
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: available > 0 ? Colors.blue.shade50 : Colors.grey.shade100,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? (available > 0 ? Colors.blue.shade900.withOpacity(0.3) : Colors.grey.shade800)
+                        : (available > 0 ? Colors.blue.shade50 : Colors.grey.shade100),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: available > 0 ? Colors.blue.shade200 : Colors.grey.shade300,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? (available > 0 ? Colors.blue.shade700 : Colors.grey.shade700)
+                          : (available > 0 ? Colors.blue.shade200 : Colors.grey.shade300),
                     ),
                   ),
                   child: Column(
@@ -453,7 +509,15 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Asignado a secciones:', style: TextStyle(fontSize: 11)),
+                          Text(
+                            'Asignado a secciones:',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black87,
+                            ),
+                          ),
                           Text(
                             '${totalAssigned.toStringAsFixed(1)} $unit',
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
@@ -464,7 +528,15 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Disponible:', style: TextStyle(fontSize: 11)),
+                          Text(
+                            'Disponible:',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black87,
+                            ),
+                          ),
                           Text(
                             '${available.toStringAsFixed(1)} $unit',
                             style: TextStyle(

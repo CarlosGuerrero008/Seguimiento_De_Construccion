@@ -85,7 +85,11 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
                         SizedBox(height: 4),
                         Text(
                           '$totalMaterials materiales',
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: TextStyle(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[400]
+                                : Colors.grey[600],
+                          ),
                         ),
                       ],
                     ),
@@ -110,7 +114,9 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
                             'Costo Usado',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
                             ),
                           ),
                         ],
@@ -153,7 +159,12 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
                 SizedBox(height: 16),
                 Text(
                   'No hay materiales asignados',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
+                  ),
                 ),
                 SizedBox(height: 8),
                 Text(
@@ -241,7 +252,9 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
             SizedBox(height: 8),
             LinearProgressIndicator(
               value: (usagePercentage / 100).clamp(0.0, 1.0),
-              backgroundColor: Colors.grey[200],
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[700]
+                  : Colors.grey[200],
               valueColor: AlwaysStoppedAnimation<Color>(
                 usagePercentage > 100 ? Colors.red :
                 usagePercentage > 75 ? Colors.orange : Colors.green,
@@ -250,7 +263,12 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
             SizedBox(height: 4),
             Text(
               '${usagePercentage.toStringAsFixed(1)}% utilizado',
-              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 11,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey[400]
+                    : Colors.grey[600],
+              ),
             ),
           ],
         ),
@@ -409,7 +427,12 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
                                 ),
                                 Text(
                                   'Total: ${selectedMaterialData!['quantityPlanned']} ${selectedMaterialData!['unit']}',
-                                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
+                                  ),
                                 ),
                               ],
                             ),
@@ -545,7 +568,11 @@ class _SectionMaterialsScreenState extends State<SectionMaterialsScreen> {
                 SizedBox(height: 8),
                 Text(
                   'Cantidad planificada: ${quantityPlanned.toStringAsFixed(1)} ${data['unit']}',
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
+                  ),
                 ),
                 Divider(height: 24),
                 TextField(

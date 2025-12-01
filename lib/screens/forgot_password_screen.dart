@@ -120,7 +120,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 Text(
                   "Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey.shade600),
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[400]
+                        : Colors.grey.shade600,
+                  ),
                 ),
                 SizedBox(height: 40),
                 TextFormField(

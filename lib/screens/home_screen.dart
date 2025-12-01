@@ -869,61 +869,66 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  if (showProjectDetailsExpanded)
-                    Container(
-                      padding: EdgeInsets.all(16.0),
-                      margin: EdgeInsets.only(top: 8.0, bottom: 16.0),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: isDark ? Colors.grey[700]! : Colors.grey,
-                        ),
-                        borderRadius: BorderRadius.circular(8.0),
-                        color: isDark ? Colors.grey[850] : Colors.grey[50],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          DetailItem(
-                            label: "Tipo de Obra:",
-                            value: projectData['type'] ?? "No especificado",
-                          ),
-                          SizedBox(height: 16),
-                          DetailItem(
-                            label: "Descripción:",
-                            value: projectData['description'] ?? "Sin descripción",
-                          ),
-                          SizedBox(height: 16),
-                          DetailItem(
-                            label: "Trabajadores:",
-                            value: projectData['workers']?.toString() ?? "No especificado",
-                          ),
-                          SizedBox(height: 16),
-                          DetailItem(
-                            label: "Fecha Inicio:",
-                            value:
-                                projectData['startDate'] != null
-                                    ? (projectData['startDate'] as Timestamp)
-                                        .toDate()
-                                        .toLocal()
-                                        .toString()
-                                        .split(' ')[0]
-                                    : "No especificada",
-                          ),
-                          SizedBox(height: 16),
-                          DetailItem(
-                            label: "Fecha Fin Prevista:",
-                            value:
-                                projectData['endDate'] != null
-                                    ? (projectData['endDate'] as Timestamp)
-                                        .toDate()
-                                        .toLocal()
-                                        .toString()
-                                        .split(' ')[0]
-                                    : "No especificada",
-                          ),
-                        ],
-                      ),
-                    ),
+                  AnimatedSize(
+                    duration: Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    child: showProjectDetailsExpanded
+                        ? Container(
+                            padding: EdgeInsets.all(16.0),
+                            margin: EdgeInsets.only(top: 8.0, bottom: 16.0),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: isDark ? Colors.grey[700]! : Colors.grey,
+                              ),
+                              borderRadius: BorderRadius.circular(8.0),
+                              color: isDark ? Colors.grey[850] : Colors.grey[50],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                DetailItem(
+                                  label: "Tipo de Obra:",
+                                  value: projectData['type'] ?? "No especificado",
+                                ),
+                                SizedBox(height: 16),
+                                DetailItem(
+                                  label: "Descripción:",
+                                  value: projectData['description'] ?? "Sin descripción",
+                                ),
+                                SizedBox(height: 16),
+                                DetailItem(
+                                  label: "Trabajadores:",
+                                  value: projectData['workers']?.toString() ?? "No especificado",
+                                ),
+                                SizedBox(height: 16),
+                                DetailItem(
+                                  label: "Fecha Inicio:",
+                                  value:
+                                      projectData['startDate'] != null
+                                          ? (projectData['startDate'] as Timestamp)
+                                              .toDate()
+                                              .toLocal()
+                                              .toString()
+                                              .split(' ')[0]
+                                          : "No especificada",
+                                ),
+                                SizedBox(height: 16),
+                                DetailItem(
+                                  label: "Fecha Fin Prevista:",
+                                  value:
+                                      projectData['endDate'] != null
+                                          ? (projectData['endDate'] as Timestamp)
+                                              .toDate()
+                                              .toLocal()
+                                              .toString()
+                                              .split(' ')[0]
+                                          : "No especificada",
+                                ),
+                              ],
+                            ),
+                          )
+                        : SizedBox.shrink(),
+                  ),
                   SizedBox(height: 16),
                 ],
               ),

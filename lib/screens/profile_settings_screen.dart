@@ -303,12 +303,27 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Scaffold(
       appBar: AppBar(
-        title: Text('Configuración del Perfil'),
+        title: Text(
+          'Configuración del Perfil',
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black87,
+          ),
+        ),
+        backgroundColor: isDarkMode ? null : Colors.white,
+        iconTheme: IconThemeData(
+          color: isDarkMode ? Colors.white : Colors.black87,
+        ),
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
+          labelColor: isDarkMode ? Colors.white : Colors.blue,
+          unselectedLabelColor: isDarkMode ? Colors.white70 : Colors.black54,
+          indicatorColor: isDarkMode ? Colors.blue : Colors.blue,
           tabs: [
             Tab(icon: Icon(Icons.person), text: 'Perfil'),
             Tab(icon: Icon(Icons.lock), text: 'Seguridad'),
@@ -949,7 +964,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
+                  ),
                 ),
                 Text(
                   value,

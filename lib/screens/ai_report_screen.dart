@@ -131,7 +131,12 @@ class _AIReportScreenState extends State<AIReportScreen> {
         children: [
           Text(
             '$label:',
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[400]
+                  : Colors.grey[600],
+              fontSize: 14,
+            ),
           ),
           Text(
             value,

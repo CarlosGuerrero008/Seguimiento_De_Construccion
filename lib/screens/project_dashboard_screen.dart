@@ -124,7 +124,12 @@ class _ProjectDashboardScreenState extends State<ProjectDashboardScreen> {
         children: [
           Text(
             '$label:',
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[400]
+                  : Colors.grey[600],
+              fontSize: 14,
+            ),
           ),
           Text(
             value,
@@ -142,7 +147,12 @@ class _ProjectDashboardScreenState extends State<ProjectDashboardScreen> {
         SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[400]
+                : Colors.grey[600],
+          ),
         ),
         SizedBox(height: 2),
         Text(
@@ -310,7 +320,9 @@ class _ProjectDashboardScreenState extends State<ProjectDashboardScreen> {
                                   'Avance',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.grey[600],
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
                                   ),
                                 ),
                               ],
@@ -358,13 +370,20 @@ class _ProjectDashboardScreenState extends State<ProjectDashboardScreen> {
                               ],
                             ),
                             progressColor: Colors.blue,
-                            backgroundColor: Colors.grey[300]!,
+                            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[700]!
+                                : Colors.grey[300]!,
                             circularStrokeCap: CircularStrokeCap.round,
                           ),
                           SizedBox(height: 8),
                           Text(
                             'Tiempo Transcurrido',
-                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                            ),
                           ),
                         ],
                       ),
@@ -374,7 +393,11 @@ class _ProjectDashboardScreenState extends State<ProjectDashboardScreen> {
                 SizedBox(height: 16),
                 Text(
                   '$sectionCount ${sectionCount == 1 ? "sección" : "secciones"} en total',
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
+                  ),
                 ),
               ],
             ),
@@ -524,7 +547,12 @@ class _ProjectDashboardScreenState extends State<ProjectDashboardScreen> {
         ),
         Text(
           label,
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[400]
+                : Colors.grey[600],
+          ),
         ),
       ],
     );

@@ -97,7 +97,11 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
                           widget.sectionData['description'].toString().isNotEmpty)
                         Text(
                           widget.sectionData['description'],
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: TextStyle(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[400]
+                                : Colors.grey[600],
+                          ),
                         ),
                     ],
                   ),
@@ -113,7 +117,9 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
                   ),
                   progressColor: progress < 30 ? Colors.red :
                                progress < 70 ? Colors.orange : Colors.green,
-                  backgroundColor: Colors.grey[300]!,
+                  backgroundColor: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey[700]!
+                      : Colors.grey[300]!,
                   circularStrokeCap: CircularStrokeCap.round,
                 ),
               ],
@@ -456,7 +462,11 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
                   SizedBox(width: 8),
                   Text(
                     'Contratista: ${data['contractorName']}',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[400]
+                          : Colors.grey[600],
+                    ),
                   ),
                 ],
               ),
@@ -474,7 +484,12 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
                   Expanded(
                     child: Text(
                       'Lat: ${data['latitude'].toStringAsFixed(6)}, Lon: ${data['longitude'].toStringAsFixed(6)}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[400]
+                            : Colors.grey[600],
+                      ),
                     ),
                   ),
                   IconButton(
@@ -1053,7 +1068,12 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
             SizedBox(height: 16),
             Text(
               'Copia la URL y ábrela en tu navegador para ver la ubicación en Google Maps.',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey[400]
+                    : Colors.grey[600],
+              ),
             ),
           ],
         ),
