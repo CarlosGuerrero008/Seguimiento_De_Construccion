@@ -17,6 +17,7 @@ import '../widgets/detail_item.dart';
 import '../widgets/invitation_list_panel.dart';
 import 'project_report_screen.dart';
 import 'project_chatbot_screen.dart';
+import 'package:share_plus/share_plus.dart';
 import 'project_documents_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -1424,6 +1425,7 @@ class _InviteUserSectionState extends State<_InviteUserSection> with SingleTicke
   bool _isExpanded = false;
   late TabController _tabController;
   String? _generatedLink;
+  String? _generatedDeepLink;
   bool _isGeneratingLink = false;
   String? _currentLinkToken;
 
@@ -1576,11 +1578,13 @@ class _InviteUserSectionState extends State<_InviteUserSection> with SingleTicke
         'isActive': true,
       });
 
-      // Generar el link (puedes personalizarlo con tu dominio)
-      final link = 'seguimiento-construccion://invite?token=$token';
+      // Generar el link (custom scheme + https para que sea clickeable en chats)
+      final deepLink = 'seguimiento-construccion://invite?token=$token';
+      final httpsLink = 'https://seguimiento-construccion.com/invite?token=$token';
 
       setState(() {
-        _generatedLink = link;
+        _generatedLink = httpsLink;
+        _generatedDeepLink = deepLink;
         _currentLinkToken = token;
         _isGeneratingLink = false;
       });
@@ -1603,7 +1607,10 @@ class _InviteUserSectionState extends State<_InviteUserSection> with SingleTicke
 
   Future<void> _copyToClipboard() async {
     if (_generatedLink != null) {
-      await Clipboard.setData(ClipboardData(text: _generatedLink!));
+      final textToCopy = _generatedDeepLink != null
+          ? '$_generatedLink\n$_generatedDeepLink'
+          : _generatedLink!;
+      await Clipboard.setData(ClipboardData(text: textToCopy));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -1621,15 +1628,23 @@ class _InviteUserSectionState extends State<_InviteUserSection> with SingleTicke
   }
 
   Future<void> _shareLink() async {
-    if (_generatedLink != null) {
-      // Aquí puedes usar share_plus package
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Link: $_generatedLink'),
-          duration: Duration(seconds: 4),
-        ),
-      );
+    if (_generatedLink == null) return;
+
+    final message = StringBuffer()
+      ..writeln('Únete al proyecto con este link:')
+      ..writeln(_generatedLink);
+
+    if (_generatedDeepLink != null) {
+      message
+        ..writeln()
+        ..writeln('Si ya tienes la app instalada, también puedes usar:')
+        ..writeln(_generatedDeepLink);
     }
+
+    await Share.share(
+      message.toString(),
+      subject: 'Invitación al proyecto',
+    );
   }
 
   Widget _buildEmailTab() {

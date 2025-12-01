@@ -27,6 +27,7 @@ class PDFGeneratorService {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: pw.EdgeInsets.all(32),
+        maxPages: 60,
         build: (context) => [
           _buildHeader(reportData, fontBold),
           pw.SizedBox(height: 20),
@@ -523,6 +524,7 @@ class PDFGeneratorService {
     pw.Font font,
     pw.Font fontBold,
   ) {
+    final summary = _truncateText(data['executiveSummary'], maxChars: 4000);
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -552,7 +554,7 @@ class PDFGeneratorService {
             ),
           ),
           child: pw.Text(
-            data['executiveSummary'] ?? 'No disponible',
+            summary.isNotEmpty ? summary : 'No disponible',
             style: pw.TextStyle(font: font, fontSize: 10, lineSpacing: 1.5),
             textAlign: pw.TextAlign.justify,
           ),
@@ -566,13 +568,18 @@ class PDFGeneratorService {
     pw.Font font,
     pw.Font fontBold,
   ) {
-    final reports = List<Map<String, dynamic>>.from(
+    final allReports = List<Map<String, dynamic>>.from(
       data['analyzedReports'] ?? [],
     );
 
-    if (reports.isEmpty) {
+    if (allReports.isEmpty) {
       return pw.Container();
     }
+
+    // Limitar cantidad para evitar PDFs demasiado grandes
+    final reports = allReports.take(10).toList();
+    final hasMore = allReports.length > 10;
+
 
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -584,6 +591,13 @@ class PDFGeneratorService {
         pw.Divider(color: PdfColors.blue),
         pw.SizedBox(height: 10),
         ...reports.map((report) => _buildReportCard(report, font, fontBold)),
+        if (hasMore) ...[
+          pw.SizedBox(height: 8),
+          pw.Text(
+            'Se muestran 10 de ${allReports.length} reportes analizados. Genere reportes por sección para más detalle.',
+            style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.blueGrey800),
+          ),
+        ]
       ],
     );
   }
@@ -783,6 +797,7 @@ class PDFGeneratorService {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: pw.EdgeInsets.all(32),
+        maxPages: 60,
         build: (context) => [
           _buildProjectHeader(reportData, fontBold),
           pw.SizedBox(height: 20),
@@ -1309,6 +1324,7 @@ class PDFGeneratorService {
     pw.Font font,
     pw.Font fontBold,
   ) {
+    final summary = _truncateText(data['executiveSummary'], maxChars: 4000);
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -1338,7 +1354,7 @@ class PDFGeneratorService {
             ),
           ),
           child: pw.Text(
-            data['executiveSummary'] ?? 'No disponible',
+            summary.isNotEmpty ? summary : 'No disponible',
             style: pw.TextStyle(font: font, fontSize: 10, lineSpacing: 1.5),
             textAlign: pw.TextAlign.justify,
           ),
@@ -1484,5 +1500,11 @@ class PDFGeneratorService {
         ],
       ),
     );
+  }
+
+  String _truncateText(dynamic value, {int maxChars = 4000}) {
+    final text = (value ?? '').toString();
+    if (text.length <= maxChars) return text;
+    return text.substring(0, maxChars) + '...';
   }
 }

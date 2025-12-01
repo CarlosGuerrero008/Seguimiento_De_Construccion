@@ -49,8 +49,14 @@ class DeepLinkService {
   void _handleDeepLink(Uri uri, BuildContext context) {
     print('Deep link recibido: $uri');
 
-    // Verificar si es un link de invitación
-    if (uri.scheme == 'seguimiento-construccion' && uri.host == 'invite') {
+    // Verificar si es un link de invitación (custom scheme o https)
+    final isCustomInvite =
+        uri.scheme == 'seguimiento-construccion' && uri.host == 'invite';
+    final isHttpsInvite = uri.scheme == 'https' &&
+        uri.host.contains('seguimiento-construccion') &&
+        uri.pathSegments.contains('invite');
+
+    if (isCustomInvite || isHttpsInvite) {
       final token = uri.queryParameters['token'];
 
       if (token != null && token.isNotEmpty) {

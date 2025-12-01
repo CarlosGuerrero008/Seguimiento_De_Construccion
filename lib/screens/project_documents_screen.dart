@@ -102,14 +102,15 @@ class _ProjectDocumentsScreenState extends State<ProjectDocumentsScreen> {
                     ),
                   ),
                   SizedBox(height: 8),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       Chip(
                         label: Text('Proyecto: ${widget.projectName}'),
                         backgroundColor:
                             isDark ? Colors.blueGrey[800] : Colors.blue[50],
                       ),
-                      SizedBox(width: 8),
                       Chip(
                         label: Text('Acepta PDF, DOCX, imágenes'),
                         backgroundColor:
