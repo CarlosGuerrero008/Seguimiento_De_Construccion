@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
@@ -325,34 +326,18 @@ class _AIReportScreenState extends State<AIReportScreen> {
           ),
         ),
         SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: _exportToPDF,
-                icon: Icon(Icons.picture_as_pdf),
-                label: Text('EXPORTAR PDF'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                ),
-              ),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _copyReportToClipboard,
+            icon: Icon(Icons.copy),
+            label: Text('COPIAR REPORTE'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(vertical: 16),
             ),
-            SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: _shareReport,
-                icon: Icon(Icons.share),
-                label: Text('COMPARTIR'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ],
     );
@@ -568,8 +553,75 @@ class _AIReportScreenState extends State<AIReportScreen> {
     }
   }
 
+  Future<void> _copyReportToClipboard() async {
+    if (_reportData == null) return;
+
+    try {
+      final StringBuffer reportText = StringBuffer();
+      
+      reportText.writeln('=== REPORTE DE SECCIÓN CON IA ===');
+      reportText.writeln('');
+      reportText.writeln('Proyecto: ${widget.projectData['name'] ?? 'N/A'}');
+      reportText.writeln('Sección: ${widget.sectionName}');
+      reportText.writeln('Progreso Actual: ${widget.sectionData['progressPercentage']?.toStringAsFixed(1) ?? '0'}%');
+      reportText.writeln('');
+      reportText.writeln('--- RESUMEN EJECUTIVO ---');
+      reportText.writeln(_reportData?['executiveSummary'] ?? 'No disponible');
+      reportText.writeln('');
+      reportText.writeln('Reportes analizados: ${_reportData?['analyzedReports']?.length ?? 0}');
+      reportText.writeln('');
+      reportText.writeln('Generado el: ${DateTime.now().toString()}');
+
+      await Clipboard.setData(ClipboardData(text: reportText.toString()));
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Reporte copiado al portapapeles'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al copiar: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   Future<void> _shareReport() async {
     if (_reportData == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Card(
+          margin: EdgeInsets.all(32),
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Generando PDF...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
 
     try {
       // Obtener datos del usuario actual
@@ -584,11 +636,72 @@ class _AIReportScreenState extends State<AIReportScreen> {
       }
 
       final pdfFile = await _pdfService.generateSectionReportPDF(_reportData!, userData);
-      await _pdfService.sharePDF(pdfFile, widget.sectionName);
+      Navigator.pop(context);
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green),
+              SizedBox(width: 8),
+            Text('PDF Generado'),
+          ],
+        ),
+        content: Text('El reporte PDF se ha generado exitosamente.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cerrar'),
+          ),
+          ElevatedButton.icon(
+            onPressed: _isSavingDocument
+                ? null
+                : () => _savePdfToDocumentation(pdfFile),
+            icon: _isSavingDocument
+                ? SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Icon(Icons.folder_open),
+            label: Text(
+              _isSavingDocument
+                  ? 'Guardando...'
+                  : 'Guardar en documentación',
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.indigo,
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              _pdfService.sharePDF(pdfFile, widget.sectionName);
+            },
+            icon: Icon(Icons.share),
+            label: Text('Compartir'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+                Navigator.pop(context);
+                _pdfService.printPDF(pdfFile);
+              },
+              icon: Icon(Icons.print),
+              label: Text('Imprimir'),
+            ),
+          ],
+        ),
+      );
     } catch (e) {
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al compartir: $e'),
+          content: Text('Error al generar PDF: $e'),
           backgroundColor: Colors.red,
         ),
       );
