@@ -1,62 +1,91 @@
-// firebase.rules (Firestore + Storage en un solo archivo)
 rules_version = '2';
 
-// ---- FIRESTORE ----
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // Helper: valida si el usuario es miembro/admin del proyecto
     function isProjectMember(projectId) {
       return request.auth != null && (
-        get(/databases/$(database)/documents/projects/$(projectId)).data.adminId == request.auth.uid ||
-        exists(/databases/$(database)/documents/projectUsers/$(request.auth.uid))
-        // ajusta esta línea si tus IDs de projectUsers son p.ej. "projectId_userId"
+        exists(/databases/$(database)/documents/projectUsers/$(request.auth.uid + '_' + projectId)) ||
+        get(/databases/$(database)/documents/projects/$(projectId)).data.adminId == request.auth.uid
       );
     }
 
+    // Imágenes de perfil de usuarios
     match /user_images/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    match /users/{userId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Colección de usuarios
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      // Permitir crear su propio documento al registrarse
+      allow create: if request.auth != null && request.auth.uid == userId;
+      // Solo el usuario puede actualizar su propio documento
+      allow update: if request.auth != null && request.auth.uid == userId;
+      // Solo el usuario puede eliminar su propio documento
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Proyectos
     match /projects/{projectId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && resource.data.adminId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.adminId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.adminId == request.auth.uid;
     }
 
+    // Relación usuarios-proyectos
     match /projectUsers/{userProjectId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (
+        resource.data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.adminId == request.auth.uid
+      );
+      allow delete: if request.auth != null && (
+        resource.data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.adminId == request.auth.uid
+      );
     }
 
+    // Enlaces de invitación
     match /invitation_links/{token} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
       allow update, delete: if request.auth != null;
     }
 
+    // Invitaciones
     match /invitations/{invitationId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
-      allow update: if request.auth != null;
-      allow delete: if request.auth != null;
+      allow update: if request.auth != null && (
+        resource.data.invitedUserId == request.auth.uid ||
+        resource.data.invitedBy == request.auth.uid
+      );
+      allow delete: if request.auth != null && (
+        resource.data.invitedUserId == request.auth.uid ||
+        resource.data.invitedBy == request.auth.uid
+      );
     }
 
+    // Secciones de proyectos
     match /projectSections/{sectionId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
     }
 
+    // Reportes diarios
     match /dailyReports/{reportId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && resource.data.createdBy == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.createdBy == request.auth.uid;
     }
 
+    // Materiales
     match /materials/{materialId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
@@ -64,6 +93,7 @@ service cloud.firestore {
       allow delete: if request.auth != null;
     }
 
+    // Asignaciones de materiales
     match /materialAssignments/{assignmentId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
@@ -71,16 +101,15 @@ service cloud.firestore {
       allow delete: if request.auth != null;
     }
 
-    // Documentos del proyecto (manuales y PDFs IA)
+    // Documentos del proyecto
     match /projectDocuments/{documentId} {
-      allow read: if request.auth != null && isProjectMember(resource.data.projectId);
-      allow create: if request.auth != null &&
-        isProjectMember(request.resource.data.projectId) &&
-        request.resource.data.size <= 20 * 1024 * 1024; // 20 MB
-      allow update, delete: if request.auth != null &&
-        resource.data.uploadedBy == request.auth.uid;
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.size <= 20 * 1024 * 1024;
+      allow update: if request.auth != null && resource.data.uploadedBy == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.uploadedBy == request.auth.uid;
     }
 
+    // Reportes de IA
     match /aiReports/{reportId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
@@ -88,28 +117,49 @@ service cloud.firestore {
       allow delete: if request.auth != null;
     }
 
+    // Configuración de usuarios
     match /userSettings/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Sesiones de usuarios
     match /userSessions/{sessionId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
       allow delete: if request.auth != null;
     }
   }
 }
 
-// ---- STORAGE ----
 service firebase.storage {
   match /b/{bucket}/o {
+    
+    // Imágenes de perfil
+    match /user_images/{userId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId &&
+        request.resource.size < 5 * 1024 * 1024; // 5 MB
+    }
 
-    match /projects/{projectId}/documents/{filePath=**} {
+    // Documentos de proyectos
+    match /projects/{projectId}/documents/{allPaths=**} {
       allow read: if request.auth != null;
       allow write: if request.auth != null &&
         request.resource.size < 20 * 1024 * 1024; // 20 MB
     }
 
+    // Imágenes de reportes diarios
+    match /daily_reports/{projectId}/{sectionId}/{reportId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+        request.resource.size < 10 * 1024 * 1024; // 10 MB
+    }
+
+    // Denegar acceso por defecto a todo lo demás
     match /{allPaths=**} {
       allow read, write: if false;
     }

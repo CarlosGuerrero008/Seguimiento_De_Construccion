@@ -62,10 +62,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
+      final email = emailController.text.trim();
+      final password = passwordController.text.trim();
+
       final UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
+        email: email,
+        password: password,
       );
 
       await userCredential.user
@@ -89,8 +92,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
         case 'weak-password':
           errorMessage = 'La contraseña es demasiado débil';
           break;
+        case 'operation-not-allowed':
+          errorMessage =
+              'El inicio de sesión con correo y contraseña está deshabilitado en Firebase Auth. Actívalo en la consola.';
+          break;
+        case 'too-many-requests':
+          errorMessage = 'Demasiados intentos. Inténtalo más tarde.';
+          break;
         default:
-          errorMessage = 'Error: ${e.message}';
+          errorMessage = 'Error: ${e.message ?? e.code}';
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMessage)),
@@ -212,7 +222,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Por favor ingresa tu correo';
                     }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}\$').hasMatch(value)) {
+                    if (!RegExp(r'^[\w\.-]+@[\w\.-]+\.\w{2,}$').hasMatch(value)) {
                       return 'Ingresa un correo válido';
                     }
                     return null;
