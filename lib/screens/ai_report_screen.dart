@@ -47,9 +47,10 @@ class _AIReportScreenState extends State<AIReportScreen> {
         title: Text('Reporte con IA'),
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(16),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildInfoCard(),
@@ -59,11 +60,13 @@ class _AIReportScreenState extends State<AIReportScreen> {
             if (_isCompleted && _reportData != null) _buildReportPreview(),
           ],
         ),
+        ),
       ),
     );
   }
 
   Widget _buildInfoCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
       elevation: 4,
       child: Padding(
@@ -94,9 +97,15 @@ class _AIReportScreenState extends State<AIReportScreen> {
             Container(
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.purple.withOpacity(0.1),
+                color: isDark 
+                    ? Colors.purple.withOpacity(0.2) 
+                    : Colors.purple.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.purple.withOpacity(0.3)),
+                border: Border.all(
+                  color: isDark 
+                      ? Colors.purple.withOpacity(0.5) 
+                      : Colors.purple.withOpacity(0.3)
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,7 +116,10 @@ class _AIReportScreenState extends State<AIReportScreen> {
                       SizedBox(width: 8),
                       Text(
                         'El reporte incluirá:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
                       ),
                     ],
                   ),
@@ -151,6 +163,7 @@ class _AIReportScreenState extends State<AIReportScreen> {
   }
 
   Widget _buildFeature(String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -158,7 +171,13 @@ class _AIReportScreenState extends State<AIReportScreen> {
           Icon(Icons.check_circle, size: 16, color: Colors.purple),
           SizedBox(width: 8),
           Expanded(
-            child: Text(text, style: TextStyle(fontSize: 13)),
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
           ),
         ],
       ),
@@ -188,6 +207,7 @@ class _AIReportScreenState extends State<AIReportScreen> {
   }
 
   Widget _buildProgressIndicator() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
       elevation: 4,
       child: Padding(
@@ -197,7 +217,7 @@ class _AIReportScreenState extends State<AIReportScreen> {
             CircularProgressIndicator(
               value: _progress,
               strokeWidth: 6,
-              backgroundColor: Colors.grey[200],
+              backgroundColor: isDark ? Colors.grey[700] : Colors.grey[200],
               valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
             ),
             SizedBox(height: 20),
@@ -218,12 +238,15 @@ class _AIReportScreenState extends State<AIReportScreen> {
   }
 
   Widget _buildReportPreview() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Card(
           elevation: 4,
-          color: Colors.green.shade50,
+          color: isDark 
+              ? Colors.green.withOpacity(0.2) 
+              : Colors.green.shade50,
           child: Padding(
             padding: EdgeInsets.all(16),
             child: Row(
@@ -239,12 +262,14 @@ class _AIReportScreenState extends State<AIReportScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green.shade900,
+                          color: isDark ? Colors.green.shade300 : Colors.green.shade900,
                         ),
                       ),
                       Text(
                         'El análisis con IA se completó exitosamente',
-                        style: TextStyle(color: Colors.green.shade700),
+                        style: TextStyle(
+                          color: isDark ? Colors.green.shade400 : Colors.green.shade700,
+                        ),
                       ),
                     ],
                   ),
@@ -270,12 +295,18 @@ class _AIReportScreenState extends State<AIReportScreen> {
                 Container(
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
+                    color: isDark 
+                        ? Colors.blue.withOpacity(0.2) 
+                        : Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     _reportData?['executiveSummary'] ?? 'No disponible',
-                    style: TextStyle(fontSize: 14, height: 1.5),
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.5,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
                   ),
                 ),
                 SizedBox(height: 16),

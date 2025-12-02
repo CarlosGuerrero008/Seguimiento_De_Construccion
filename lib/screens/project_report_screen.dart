@@ -39,9 +39,10 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
         title: Text('Reporte Completo del Proyecto'),
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(16),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildInfoCard(),
@@ -51,11 +52,13 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
             if (_isCompleted && _reportData != null) _buildReportPreview(),
           ],
         ),
+        ),
       ),
     );
   }
 
   Widget _buildInfoCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
       elevation: 4,
       child: Padding(
@@ -82,9 +85,15 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
             Container(
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: isDark 
+                    ? Colors.blue.withOpacity(0.2) 
+                    : Colors.blue.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                border: Border.all(
+                  color: isDark 
+                      ? Colors.blue.withOpacity(0.5) 
+                      : Colors.blue.withOpacity(0.3)
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,7 +104,10 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
                       SizedBox(width: 8),
                       Text(
                         'Este reporte incluirá:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
                       ),
                     ],
                   ),
@@ -140,6 +152,7 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
   }
 
   Widget _buildFeature(String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -147,7 +160,13 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
           Icon(Icons.check_circle, size: 16, color: Colors.blue),
           SizedBox(width: 8),
           Expanded(
-            child: Text(text, style: TextStyle(fontSize: 13)),
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
           ),
         ],
       ),
@@ -177,6 +196,7 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
   }
 
   Widget _buildProgressIndicator() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
       elevation: 4,
       child: Padding(
@@ -186,7 +206,7 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
             CircularProgressIndicator(
               value: _progress,
               strokeWidth: 6,
-              backgroundColor: Colors.grey[200],
+              backgroundColor: isDark ? Colors.grey[700] : Colors.grey[200],
               valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
             ),
             SizedBox(height: 20),
@@ -207,6 +227,7 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
   }
 
   Widget _buildReportPreview() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final delayDays = _reportData?['delayDays'] ?? 0;
     final avgProgress = _reportData?['averageProgress'] ?? 0;
 
@@ -215,7 +236,9 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
       children: [
         Card(
           elevation: 4,
-          color: Colors.green.shade50,
+          color: isDark 
+              ? Colors.green.withOpacity(0.2) 
+              : Colors.green.shade50,
           child: Padding(
             padding: EdgeInsets.all(16),
             child: Row(
@@ -231,12 +254,14 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green.shade900,
+                          color: isDark ? Colors.green.shade300 : Colors.green.shade900,
                         ),
                       ),
                       Text(
                         'El análisis completo del proyecto se completó exitosamente',
-                        style: TextStyle(color: Colors.green.shade700),
+                        style: TextStyle(
+                          color: isDark ? Colors.green.shade400 : Colors.green.shade700,
+                        ),
                       ),
                     ],
                   ),
@@ -393,9 +418,15 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: isDark 
+            ? color.withOpacity(0.2) 
+            : color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(
+          color: isDark 
+              ? color.withOpacity(0.5) 
+              : color.withOpacity(0.3)
+        ),
       ),
       child: Column(
         children: [
