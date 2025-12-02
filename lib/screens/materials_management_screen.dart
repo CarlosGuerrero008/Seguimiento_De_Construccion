@@ -54,11 +54,13 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildSummaryCard(),
-          Expanded(child: _buildMaterialsList()),
-        ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildSummaryCard(),
+            Expanded(child: _buildMaterialsList()),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddMaterialDialog,

@@ -44,7 +44,8 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: SafeArea(
+        child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -58,6 +59,7 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
             SizedBox(height: 80), // Espacio para el FAB
           ],
         ),
+      ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showCreateReportDialog,

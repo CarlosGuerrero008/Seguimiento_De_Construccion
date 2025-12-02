@@ -421,14 +421,16 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              if (showProjectDetails)
-                _buildProjectDetailsView(selectedProject!)
-              else
-                _buildProjectList(),
-            ],
+        body: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                if (showProjectDetails)
+                  _buildProjectDetailsView(selectedProject!)
+                else
+                  _buildProjectList(),
+              ],
+            ),
           ),
         ),
     );

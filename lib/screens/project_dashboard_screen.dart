@@ -28,21 +28,23 @@ class _ProjectDashboardScreenState extends State<ProjectDashboardScreen> {
         title: Text('Dashboard - ${widget.projectData['name']}'),
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildProjectSummaryCard(),
-            SizedBox(height: 16),
-            _buildTimelineCard(),
-            SizedBox(height: 16),
-            _buildProgressCard(),
-            SizedBox(height: 16),
-            _buildReportsStatisticsCard(),
-            SizedBox(height: 16),
-            _buildSectionsProgressChart(),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildProjectSummaryCard(),
+              SizedBox(height: 16),
+              _buildTimelineCard(),
+              SizedBox(height: 16),
+              _buildProgressCard(),
+              SizedBox(height: 16),
+              _buildReportsStatisticsCard(),
+              SizedBox(height: 16),
+              _buildSectionsProgressChart(),
+            ],
+          ),
         ),
       ),
     );
