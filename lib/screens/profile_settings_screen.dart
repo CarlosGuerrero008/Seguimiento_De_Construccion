@@ -332,7 +332,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
           ],
         ),
       ),
-      body: _isLoading
+      body: SafeArea(
+        child: _isLoading
           ? Center(child: CircularProgressIndicator())
           : TabBarView(
               controller: _tabController,
@@ -343,6 +344,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
                 _buildPreferencesTab(),
               ],
             ),
+        ),
     );
   }
 
