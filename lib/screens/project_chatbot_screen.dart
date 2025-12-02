@@ -317,32 +317,34 @@ ${reports.take(5).map((r) => '- ${r['date']}: ${r['contractor']} en ${r['section
           ),
         ],
       ),
-      body: _isLoading
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+      body: SafeArea(
+        child: _isLoading
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Cargando datos del proyecto...'),
+                  ],
+                ),
+              )
+            : Column(
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Cargando datos del proyecto...'),
+                  Expanded(
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: EdgeInsets.all(16),
+                      itemCount: _messages.length,
+                      itemBuilder: (context, index) {
+                        return _buildMessageBubble(_messages[index]);
+                      },
+                    ),
+                  ),
+                  _buildInputArea(),
                 ],
               ),
-            )
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding: EdgeInsets.all(16),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      return _buildMessageBubble(_messages[index]);
-                    },
-                  ),
-                ),
-                _buildInputArea(),
-              ],
-            ),
+      ),
     );
   }
 
@@ -384,10 +386,19 @@ ${reports.take(5).map((r) => '- ${r['date']}: ${r['contractor']} en ${r['section
   }
 
   Widget _buildInputArea() {
+    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 12,
+        bottom: bottomPadding > 0 ? bottomPadding : 16,
+      ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Colors.grey[900]
+            : Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
