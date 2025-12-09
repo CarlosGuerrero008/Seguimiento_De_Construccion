@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/document_service.dart';
+import '../providers/theme_provider.dart';
 
 class ProjectDocumentsScreen extends StatefulWidget {
   final String projectId;
@@ -102,10 +103,10 @@ class _ProjectDocumentsScreenState extends State<ProjectDocumentsScreen> {
             Container(
               padding: EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.12),
+                color: AppColors.primary500.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.folder_open, color: Colors.blue),
+              child: Icon(Icons.folder_open, color: AppColors.primary500),
             ),
             SizedBox(width: 12),
             Expanded(
@@ -134,12 +135,12 @@ class _ProjectDocumentsScreenState extends State<ProjectDocumentsScreen> {
                       Chip(
                         label: Text('Proyecto: ${widget.projectName}'),
                         backgroundColor:
-                            isDark ? Colors.blueGrey[800] : Colors.blue[50],
+                            isDark ? AppColors.primary900 : AppColors.primary50,
                       ),
                       Chip(
                         label: Text('Acepta PDF, DOCX, imágenes'),
                         backgroundColor:
-                            isDark ? Colors.blueGrey[800] : Colors.blue[50],
+                            isDark ? AppColors.primary900 : AppColors.primary50,
                       ),
                     ],
                   ),
@@ -212,10 +213,10 @@ class _ProjectDocumentsScreenState extends State<ProjectDocumentsScreen> {
                 leading: CircleAvatar(
                   backgroundColor: source == 'ia'
                       ? Colors.purple.withOpacity(0.15)
-                      : Colors.blue.withOpacity(0.15),
+                      : AppColors.primary500.withOpacity(0.15),
                   child: Icon(
                     source == 'ia' ? Icons.auto_awesome : Icons.description,
-                    color: source == 'ia' ? Colors.purple : Colors.blue,
+                    color: source == 'ia' ? Colors.purple : AppColors.primary500,
                   ),
                 ),
                 title: Text(

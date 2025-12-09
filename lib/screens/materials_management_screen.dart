@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:intl/intl.dart';
+import '../providers/theme_provider.dart';
 
 class MaterialsManagementScreen extends StatefulWidget {
   final String projectId;
@@ -66,7 +67,7 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
         onPressed: _showAddMaterialDialog,
         icon: Icon(Icons.add),
         label: Text('Agregar Material'),
-        backgroundColor: Colors.blue,
+        backgroundColor: AppColors.primary500,
       ),
     );
   }
@@ -113,13 +114,13 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
                       'Total Materiales',
                       totalMaterials.toString(),
                       Icons.inventory,
-                      Colors.blue,
+                      AppColors.primary500,
                     ),
                     _buildSummaryStat(
                       'Entregados',
                       deliveredCount.toString(),
                       Icons.check_circle,
-                      Colors.green,
+                      AppColors.primary600,
                     ),
                   ],
                 ),
@@ -130,12 +131,12 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
                     _buildCostStat(
                       'Presupuestado',
                       totalPlannedCost,
-                      Colors.orange,
+                      AppColors.primary500,
                     ),
                     _buildCostStat(
                       'Gastado',
                       totalUsedCost,
-                      Colors.red,
+                      AppColors.primary700,
                     ),
                   ],
                 ),
@@ -331,14 +332,8 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
             LinearPercentIndicator(
               lineHeight: 8.0,
               percent: (usagePercentage / 100).clamp(0, 1),
-              backgroundColor: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.grey[700]
-                  : Colors.grey[300],
-              progressColor: usagePercentage < 50
-                  ? Colors.green
-                  : usagePercentage < 90
-                      ? Colors.orange
-                      : Colors.red,
+              backgroundColor: AppColors.primary100,
+              progressColor: AppColors.primary600,
               barRadius: Radius.circular(10),
             ),
           ],
@@ -478,13 +473,13 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? (available > 0 ? Colors.blue.shade900.withOpacity(0.3) : Colors.grey.shade800)
-                        : (available > 0 ? Colors.blue.shade50 : Colors.grey.shade100),
+                        ? (available > 0 ? AppColors.primary900.withOpacity(0.3) : Colors.grey.shade800)
+                        : (available > 0 ? AppColors.primary50 : Colors.grey.shade100),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: Theme.of(context).brightness == Brightness.dark
-                          ? (available > 0 ? Colors.blue.shade700 : Colors.grey.shade700)
-                          : (available > 0 ? Colors.blue.shade200 : Colors.grey.shade300),
+                          ? (available > 0 ? AppColors.primary700 : Colors.grey.shade700)
+                          : (available > 0 ? AppColors.primary200 : Colors.grey.shade300),
                     ),
                   ),
                   child: Column(
@@ -495,7 +490,7 @@ class _MaterialsManagementScreenState extends State<MaterialsManagementScreen> {
                           Icon(
                             Icons.assignment,
                             size: 18,
-                            color: available > 0 ? Colors.blue : Colors.grey,
+                            color: available > 0 ? AppColors.primary500 : Colors.grey,
                           ),
                           SizedBox(width: 8),
                           Text(

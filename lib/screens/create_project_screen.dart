@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import '../providers/theme_provider.dart';
 
 class CreateProjectScreen extends StatefulWidget {
   const CreateProjectScreen({Key? key}) : super(key: key);
@@ -86,7 +87,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                       child: ElevatedButton(
                         onPressed: details.onStepContinue,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
+                          backgroundColor: AppColors.primary500,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
@@ -181,7 +182,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.blue,
+            color: AppColors.primary500,
           ),
         ),
         SizedBox(height: 20),
@@ -278,7 +279,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.blue,
+            color: AppColors.primary500,
           ),
         ),
         SizedBox(height: 20),
@@ -306,7 +307,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
               child: ElevatedButton(
                 onPressed: _isLoadingLocation ? null : _getCurrentLocation,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: AppColors.primary500,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -405,7 +406,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
             switch (status) {
               case 'Planificado':
                 icon = Icons.schedule;
-                color = Colors.blue;
+                color = AppColors.primary500;
                 break;
               case 'En Progreso':
                 icon = Icons.construction;
@@ -448,7 +449,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
         Card(
           elevation: 2,
           child: ListTile(
-            leading: Icon(Icons.calendar_today, color: Colors.blue),
+            leading: Icon(Icons.calendar_today, color: AppColors.primary500),
             title: Text('Fecha de Inicio'),
             subtitle: Text(DateFormat('dd/MM/yyyy').format(_startDate)),
             trailing: Icon(Icons.edit),
@@ -507,7 +508,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.blue,
+            color: AppColors.primary500,
           ),
         ),
         SizedBox(height: 8),
@@ -566,13 +567,13 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.blue.shade900.withOpacity(0.3)
-                : Colors.blue.shade50,
+                ? AppColors.primary900.withOpacity(0.3)
+                : AppColors.primary50,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.blue.shade700
-                  : Colors.blue.shade200,
+                  ? AppColors.primary700
+                  : AppColors.primary200,
             ),
           ),
           child: Row(
@@ -580,8 +581,8 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
               Icon(
                 Icons.info_outline,
                 color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.blue.shade300
-                    : Colors.blue,
+                    ? AppColors.primary300
+                    : AppColors.primary500,
               ),
               SizedBox(width: 12),
               Expanded(
@@ -590,8 +591,8 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                   style: TextStyle(
                     fontSize: 13,
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.blue.shade100
-                        : Colors.blue.shade900,
+                        ? AppColors.primary100
+                        : AppColors.primary900,
                   ),
                 ),
               ),

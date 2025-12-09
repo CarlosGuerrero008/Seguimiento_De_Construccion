@@ -6,11 +6,13 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:percent_indicator/percent_indicator.dart';
+import '../providers/theme_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter/services.dart';
 import 'ai_report_screen.dart';
 import 'section_materials_screen.dart';
+import '../providers/theme_provider.dart';
 
 class SectionDetailsScreen extends StatefulWidget {
   final String sectionId;
@@ -65,7 +67,7 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
         onPressed: _showCreateReportDialog,
         icon: Icon(Icons.add_photo_alternate),
         label: Text('Nuevo Reporte'),
-        backgroundColor: Colors.blue,
+        backgroundColor: AppColors.primary500,
       ),
     );
   }
@@ -242,14 +244,14 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.green.shade600, Colors.teal.shade700],
+            colors: [AppColors.primary300, AppColors.primary500],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.green.withOpacity(0.3),
+              color: AppColors.primary500.withOpacity(0.25),
               blurRadius: 10,
               offset: Offset(0, 4),
             ),
@@ -278,12 +280,12 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
                   Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: AppColors.primary50,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.inventory_2,
-                      color: Colors.white,
+                      color: AppColors.primary700,
                       size: 28,
                     ),
                   ),
@@ -506,7 +508,7 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
                   ),
                   SizedBox(width: 4),
                   IconButton(
-                    icon: Icon(Icons.map, size: 18, color: Colors.blue),
+                    icon: Icon(Icons.map, size: 18, color: AppColors.primary500),
                     tooltip: 'Ver en Google Maps',
                     padding: EdgeInsets.zero,
                     constraints: BoxConstraints(),
@@ -1038,7 +1040,7 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.map, color: Colors.blue),
+            Icon(Icons.map, color: AppColors.primary500),
             SizedBox(width: 8),
             Text('Abrir en Google Maps'),
           ],
@@ -1064,7 +1066,7 @@ class _SectionDetailsScreenState extends State<SectionDetailsScreen> {
               ),
               child: SelectableText(
                 googleMapsUrl,
-                style: TextStyle(fontSize: 12, color: Colors.blue),
+                style: TextStyle(fontSize: 12, color: AppColors.primary500),
               ),
             ),
             SizedBox(height: 16),

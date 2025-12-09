@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/gemini_service.dart';
 import '../services/pdf_generator_service.dart';
 import '../services/document_service.dart';
+import '../providers/theme_provider.dart';
 
 class ProjectReportScreen extends StatefulWidget {
   final String projectId;
@@ -69,7 +70,7 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.assessment, color: Colors.blue, size: 32),
+                Icon(Icons.assessment, color: AppColors.primary500, size: 32),
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -87,13 +88,13 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isDark 
-                    ? Colors.blue.withOpacity(0.2) 
-                    : Colors.blue.withOpacity(0.1),
+                    ? AppColors.primary500.withOpacity(0.2) 
+                    : AppColors.primary500.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isDark 
-                      ? Colors.blue.withOpacity(0.5) 
-                      : Colors.blue.withOpacity(0.3)
+                      ? AppColors.primary500.withOpacity(0.5) 
+                      : AppColors.primary500.withOpacity(0.3)
                 ),
               ),
               child: Column(
@@ -101,7 +102,7 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.info_outline, size: 20, color: Colors.blue),
+                      Icon(Icons.info_outline, size: 20, color: AppColors.primary500),
                       SizedBox(width: 8),
                       Text(
                         'Este reporte incluirá:',
@@ -158,7 +159,7 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
       padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(Icons.check_circle, size: 16, color: Colors.blue),
+          Icon(Icons.check_circle, size: 16, color: AppColors.primary500),
           SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -186,7 +187,7 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
+          backgroundColor: AppColors.primary500,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -208,7 +209,7 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
               value: _progress,
               strokeWidth: 6,
               backgroundColor: isDark ? Colors.grey[700] : Colors.grey[200],
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary500),
             ),
             SizedBox(height: 20),
             Text(
@@ -219,7 +220,7 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
             SizedBox(height: 8),
             Text(
               '${(_progress * 100).toStringAsFixed(0)}%',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blue),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary500),
             ),
           ],
         ),
@@ -293,7 +294,7 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
                         '${avgProgress.toStringAsFixed(1)}%',
                         'Progreso',
                         Icons.show_chart,
-                        Colors.blue,
+                        AppColors.primary500,
                       ),
                     ),
                     SizedBox(width: 12),
@@ -353,13 +354,13 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.blue.shade900.withOpacity(0.3)
-                        : Colors.blue.shade50,
+                        ? AppColors.primary900.withOpacity(0.3)
+                        : AppColors.primary50,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.blue.shade700
-                          : Colors.blue.shade200,
+                          ? AppColors.primary700
+                          : AppColors.primary200,
                     ),
                   ),
                   child: Text(
@@ -387,7 +388,7 @@ class _ProjectReportScreenState extends State<ProjectReportScreen> {
             icon: Icon(Icons.copy),
             label: Text('COPIAR REPORTE'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: AppColors.primary500,
               foregroundColor: Colors.white,
               padding: EdgeInsets.symmetric(vertical: 16),
             ),

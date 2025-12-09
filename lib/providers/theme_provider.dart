@@ -1,173 +1,118 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-class ThemeProvider extends ChangeNotifier {
-  bool _isDarkMode = false;
-  bool _isLoading = true;
+/// Paleta principal de la aplicacion.
+class AppColors {
+  static const Color primary50 = Color(0xFFE5E5FF);
+  static const Color primary100 = Color(0xFFCCCCFF);
+  static const Color primary200 = Color(0xFF9999FF);
+  static const Color primary300 = Color(0xFF6666FF);
+  static const Color primary400 = Color(0xFF3333FF);
+  static const Color primary500 = Color(0xFF0000FF);
+  static const Color primary600 = Color(0xFF0000CC);
+  static const Color primary700 = Color(0xFF000099);
+  static const Color primary800 = Color(0xFF000066);
+  static const Color primary900 = Color(0xFF000033);
 
-  bool get isDarkMode => _isDarkMode;
-  bool get isLoading => _isLoading;
+  static const MaterialColor primarySwatch = MaterialColor(
+    0xFF0000FF,
+    <int, Color>{
+      50: primary50,
+      100: primary100,
+      200: primary200,
+      300: primary300,
+      400: primary400,
+      500: primary500,
+      600: primary600,
+      700: primary700,
+      800: primary800,
+      900: primary900,
+    },
+  );
+}
 
-  ThemeProvider() {
-    _loadThemeFromPrefs();
-  }
+/// Tema unico de la app usando la paleta definida.
+class ThemeProvider {
+  static ThemeData get theme {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: AppColors.primary500,
+      brightness: Brightness.light,
+    ).copyWith(
+      primary: AppColors.primary500,
+      secondary: AppColors.primary300,
+      primaryContainer: AppColors.primary100,
+      secondaryContainer: AppColors.primary200,
+      surface: Colors.white,
+      background: AppColors.primary50,
+    );
 
-  // Cargar preferencia de tema desde SharedPreferences
-  Future<void> _loadThemeFromPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      print('Error al cargar preferencias de tema: $e');
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  // Alternar entre tema claro y oscuro
-  Future<void> toggleTheme() async {
-    _isDarkMode = !_isDarkMode;
-    notifyListeners();
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isDarkMode', _isDarkMode);
-    } catch (e) {
-      print('Error al guardar preferencias de tema: $e');
-    }
-  }
-
-  // Establecer tema espec�fico
-  Future<void> setTheme(bool isDark) async {
-    if (_isDarkMode == isDark) return;
-
-    _isDarkMode = isDark;
-    notifyListeners();
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isDarkMode', _isDarkMode);
-    } catch (e) {
-      print('Error al guardar preferencias de tema: $e');
-    }
-  }
-
-  // Tema claro
-  static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: ColorScheme.light(
-        primary: Colors.blue,
-        secondary: Colors.blueAccent,
-        surface: Colors.white,
-        error: Colors.red,
-      ),
-      scaffoldBackgroundColor: Colors.grey[50],
+      colorScheme: colorScheme,
+      primaryColor: AppColors.primary500,
+      primarySwatch: AppColors.primarySwatch,
+      scaffoldBackgroundColor: AppColors.primary50,
+      fontFamily: 'Roboto',
       appBarTheme: AppBarTheme(
-        elevation: 0,
-        backgroundColor: Colors.blue,
+        backgroundColor: AppColors.primary700,
         foregroundColor: Colors.white,
         centerTitle: true,
+        elevation: 0,
         iconTheme: IconThemeData(color: Colors.white),
       ),
       cardTheme: CardThemeData(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
         color: Colors.white,
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          elevation: 2,
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue, width: 2),
-        ),
-      ),
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        elevation: 4,
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-      ),
-    );
-  }
-
-  // Tema oscuro
-  static ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      colorScheme: ColorScheme.dark(
-        primary: Colors.blue[300]!,
-        secondary: Colors.blueAccent[200]!,
-        surface: Colors.grey[850]!,
-        error: Colors.red[300]!,
-      ),
-      scaffoldBackgroundColor: Colors.grey[900],
-      appBarTheme: AppBarTheme(
-        elevation: 0,
-        backgroundColor: Colors.grey[850],
-        foregroundColor: Colors.white,
-        centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.white),
-      ),
-      cardTheme: CardThemeData(
-        elevation: 2,
+        elevation: 3,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
         ),
-        color: Colors.grey[850],
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          elevation: 2,
+          backgroundColor: AppColors.primary600,
+          foregroundColor: Colors.white,
           padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
           ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.primary600,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.grey[800],
+        fillColor: AppColors.primary50,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[700]!),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: AppColors.primary200),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue[300]!, width: 2),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: AppColors.primary500, width: 2),
         ),
+        hintStyle: TextStyle(color: AppColors.primary300),
+        labelStyle: TextStyle(color: AppColors.primary700),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: AppColors.primary600,
+        foregroundColor: Colors.white,
         elevation: 4,
-        backgroundColor: Colors.blue[300],
-        foregroundColor: Colors.black,
+      ),
+      dividerTheme: DividerThemeData(
+        color: AppColors.primary100,
+        thickness: 1,
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: AppColors.primary700,
+        unselectedLabelColor: AppColors.primary300,
+        indicatorColor: AppColors.primary500,
       ),
     );
   }

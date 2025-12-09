@@ -19,6 +19,8 @@ import 'project_report_screen.dart';
 import 'project_chatbot_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'project_documents_screen.dart';
+import '../providers/theme_provider.dart';
+import '../providers/theme_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -231,8 +233,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       : null,
                               backgroundColor:
                                   isDark
-                                      ? Colors.blueGrey[700]
-                                      : Colors.blue.shade100,
+                                      ? AppColors.primary800
+                                      : AppColors.primary100,
                             ),
                             SizedBox(width: 16),
                             Column(
@@ -415,7 +417,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ? Icon(Icons.person, size: 18)
                           : null,
                   backgroundColor:
-                      isDark ? Colors.blueGrey[700] : Colors.blue.shade100,
+                      isDark ? AppColors.primary800 : AppColors.primary100,
                 ),
               ),
             ),
@@ -482,7 +484,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               decoration: InputDecoration(
                 hintText: 'Buscar proyectos...',
-                prefixIcon: Icon(Icons.search, color: Colors.blue),
+                prefixIcon: Icon(Icons.search, color: AppColors.primary500),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: Icon(Icons.clear),
@@ -530,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(double.infinity, 56),
                 backgroundColor:
-                    isDark ? Colors.blueGrey[700] : Colors.blue,
+                    isDark ? AppColors.primary800 : AppColors.primary500,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -668,7 +670,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 gradient: LinearGradient(
                   colors: [
                     isDark ? Colors.grey[800]! : Colors.white,
-                    isDark ? Colors.grey[850]! : Colors.blue.shade50,
+                    isDark ? Colors.grey[850]! : AppColors.primary50,
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -695,7 +697,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.blue,
+                            color: AppColors.primary500,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -726,7 +728,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     // Información adicional
                     Row(
                       children: [
-                        Icon(Icons.people, size: 16, color: Colors.blue),
+                        Icon(Icons.people, size: 16, color: AppColors.primary500),
                         SizedBox(width: 4),
                         Text(
                           '$workers trabajadores',
@@ -866,7 +868,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: Text('Detalles del Proyecto'),
                     style: ElevatedButton.styleFrom(
                       minimumSize: Size(double.infinity, 50),
-                      backgroundColor: isDark ? Colors.blueGrey[700] : Colors.blue,
+                      backgroundColor: isDark ? AppColors.primary800 : AppColors.primary500,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -955,7 +957,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: ElevatedButton.styleFrom(
                     minimumSize: Size(double.infinity, 55),
                     backgroundColor:
-                        isDark ? Colors.blueGrey[700] : Colors.blue,
+                        isDark ? AppColors.primary800 : AppColors.primary500,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -981,8 +983,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   label: Text("GESTIONAR MATERIALES"),
                   style: ElevatedButton.styleFrom(
                     minimumSize: Size(double.infinity, 55),
-                    backgroundColor:
-                        isDark ? Colors.green[700] : Colors.green,
+                    backgroundColor: AppColors.primary600,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -1008,8 +1009,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   label: Text("DOCUMENTACIÓN"),
                   style: ElevatedButton.styleFrom(
                     minimumSize: Size(double.infinity, 55),
-                    backgroundColor:
-                        isDark ? Colors.indigo[700] : Colors.indigo,
+                    backgroundColor: AppColors.primary700,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -1047,8 +1047,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       style: ElevatedButton.styleFrom(
                         minimumSize: Size(0, 55),
-                        backgroundColor:
-                            isDark ? Colors.purple[700] : Colors.purple,
+                        backgroundColor: AppColors.primary500,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -1077,8 +1076,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       style: ElevatedButton.styleFrom(
                         minimumSize: Size(0, 55),
-                        backgroundColor:
-                            isDark ? Colors.orange[700] : Colors.orange,
+                        backgroundColor: AppColors.primary500,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -1136,9 +1134,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     '${totalProgress.toStringAsFixed(1)}%',
                     style: TextStyle(fontSize: 12, color: Colors.white),
                   ),
-                  backgroundColor: Colors.grey[300],
-                  progressColor: totalProgress < 30 ? Colors.red :
-                               totalProgress < 70 ? Colors.orange : Colors.green,
+                  backgroundColor: AppColors.primary100,
+                  progressColor: AppColors.primary600,
                   barRadius: Radius.circular(10),
                 ),
                 SizedBox(height: 8),
@@ -1170,7 +1167,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               IconButton(
-                icon: Icon(Icons.add_circle, color: Colors.blue, size: 32),
+                icon: Icon(Icons.add_circle, color: AppColors.primary500, size: 32),
                 onPressed: _showCreateSectionDialog,
                 tooltip: 'Agregar secci\u00f3n',
               ),
@@ -1266,9 +1263,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: progress < 30 ? Colors.red.withOpacity(0.2) :
-                             progress < 70 ? Colors.orange.withOpacity(0.2) : 
-                             Colors.green.withOpacity(0.2),
+                      color: AppColors.primary100,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -1276,8 +1271,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: progress < 30 ? Colors.red :
-                               progress < 70 ? Colors.orange : Colors.green,
+                        color: AppColors.primary700,
                       ),
                     ),
                   ),
@@ -1296,9 +1290,8 @@ class _HomeScreenState extends State<HomeScreen> {
               LinearPercentIndicator(
                 lineHeight: 8.0,
                 percent: progress / 100,
-                backgroundColor: Colors.grey[300],
-                progressColor: progress < 30 ? Colors.red :
-                             progress < 70 ? Colors.orange : Colors.green,
+                backgroundColor: AppColors.primary100,
+                progressColor: AppColors.primary600,
                 barRadius: Radius.circular(10),
               ),
             ],
@@ -1705,7 +1698,7 @@ class _InviteUserSectionState extends State<_InviteUserSection> with SingleTicke
                     dense: true,
                     leading: CircleAvatar(
                       radius: 16,
-                      backgroundColor: Colors.blue,
+                      backgroundColor: AppColors.primary500,
                       child: Text(
                         suggestion['email'][0].toUpperCase(),
                         style: TextStyle(color: Colors.white, fontSize: 12),
@@ -1765,7 +1758,7 @@ class _InviteUserSectionState extends State<_InviteUserSection> with SingleTicke
             label: Text('Enviar Invitación'),
             style: ElevatedButton.styleFrom(
               minimumSize: Size(double.infinity, 50),
-              backgroundColor: isDark ? Colors.blue[700] : Colors.blue,
+              backgroundColor: isDark ? AppColors.primary700 : AppColors.primary500,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -1789,17 +1782,17 @@ class _InviteUserSectionState extends State<_InviteUserSection> with SingleTicke
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isDark ? Colors.blue[900]!.withOpacity(0.2) : Colors.blue[50],
+              color: isDark ? AppColors.primary900.withOpacity(0.2) : AppColors.primary50,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: isDark ? Colors.blue[700]! : Colors.blue[200]!,
+                color: isDark ? AppColors.primary700 : AppColors.primary200,
               ),
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.info_outline,
-                  color: isDark ? Colors.blue[300] : Colors.blue[700],
+                  color: isDark ? AppColors.primary300 : AppColors.primary700,
                   size: 24,
                 ),
                 SizedBox(width: 12),
@@ -1808,7 +1801,7 @@ class _InviteUserSectionState extends State<_InviteUserSection> with SingleTicke
                     'Genera un link de invitación que podrás compartir. El link expira en 7 días y permite hasta 10 usos.',
                     style: TextStyle(
                       fontSize: 13,
-                      color: isDark ? Colors.blue[200] : Colors.blue[900],
+                      color: isDark ? AppColors.primary200 : AppColors.primary900,
                     ),
                   ),
                 ),
@@ -1929,7 +1922,7 @@ class _InviteUserSectionState extends State<_InviteUserSection> with SingleTicke
                           icon: Icon(Icons.copy, size: 20),
                           onPressed: _copyToClipboard,
                           tooltip: 'Copiar',
-                          color: isDark ? Colors.blue[300] : Colors.blue[700],
+                          color: isDark ? AppColors.primary300 : AppColors.primary700,
                         ),
                       ],
                     ),
@@ -2040,7 +2033,7 @@ class _InviteUserSectionState extends State<_InviteUserSection> with SingleTicke
           label: Text('Invitar Usuario al Proyecto'),
           style: ElevatedButton.styleFrom(
             minimumSize: Size(double.infinity, 50),
-            backgroundColor: isDark ? Colors.blueGrey[700] : Colors.blue,
+            backgroundColor: isDark ? AppColors.primary800 : AppColors.primary500,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -2069,7 +2062,7 @@ class _InviteUserSectionState extends State<_InviteUserSection> with SingleTicke
                   child: TabBar(
                     controller: _tabController,
                     indicator: BoxDecoration(
-                      color: isDark ? Colors.blue[700] : Colors.blue,
+                      color: isDark ? AppColors.primary700 : AppColors.primary500,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     labelColor: Colors.white,

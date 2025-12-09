@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import '../widgets/image_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../providers/theme_provider.dart';
 
 class EditProfileScreen extends StatefulWidget {
   @override
@@ -347,7 +348,7 @@ Future<void> _updateProfile() async {
                           child: Container(
                             padding: EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: Colors.blue,
+                              color: AppColors.primary500,
                               shape: BoxShape.circle,
                             ),
                             child: Icon(Icons.edit, size: 20, color: Colors.white),
@@ -399,7 +400,7 @@ Future<void> _updateProfile() async {
                     },
                     child: Text(
                       _showPasswordSection ? 'Ocultar cambio de contraseña' : 'Cambiar contraseña',
-                      style: TextStyle(color: Colors.blue),
+                      style: TextStyle(color: AppColors.primary500),
                     ),
                   ),
 
@@ -462,7 +463,7 @@ Future<void> _updateProfile() async {
                     },
                     child: Text(
                       _showEmailSection ? 'Ocultar cambio de correo' : 'Cambiar correo electrónico',
-                      style: TextStyle(color: Colors.blue),
+                      style: TextStyle(color: AppColors.primary500),
                     ),
                   ),
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
+import '../providers/theme_provider.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   @override
@@ -109,7 +110,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(height: 40),
-                Icon(Icons.lock_reset, size: 80, color: Colors.blue),
+                Icon(Icons.lock_reset, size: 80, color: AppColors.primary500),
                 SizedBox(height: 20),
                 Text(
                   "Recupera tu contraseña",
@@ -150,7 +151,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   onPressed: (_isLoading || !_canSend) ? null : _sendResetEmail,
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.blue.shade800,
+                    backgroundColor: AppColors.primary800,
                   ),
                   child: _isLoading
                       ? CircularProgressIndicator(color: Colors.white)
@@ -173,7 +174,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     onPressed: () => Navigator.pop(context),
                     child: Text(
                       'Volver al inicio de sesión',
-                      style: TextStyle(color: Colors.blue),
+                      style: TextStyle(color: AppColors.primary500),
                     ),
                   ),
                 ],

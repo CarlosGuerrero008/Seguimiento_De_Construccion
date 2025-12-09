@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
+import '../providers/theme_provider.dart';
 
 class InvitationHandlerScreen extends StatefulWidget {
   final String token;
@@ -148,7 +149,7 @@ class _InvitationHandlerScreenState extends State<InvitationHandlerScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Ya eres miembro de este proyecto'),
-            backgroundColor: Colors.blue,
+            backgroundColor: AppColors.primary500,
           ),
         );
 
@@ -274,7 +275,7 @@ class _InvitationHandlerScreenState extends State<InvitationHandlerScreen> {
                               children: [
                                 Icon(
                                   Icons.business,
-                                  color: Colors.blue,
+                                  color: AppColors.primary500,
                                   size: 32,
                                 ),
                                 SizedBox(width: 12),

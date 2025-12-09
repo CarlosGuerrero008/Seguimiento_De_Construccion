@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../providers/theme_provider.dart';
 
 class ProjectChatbotScreen extends StatefulWidget {
   final String projectId;
@@ -357,7 +358,7 @@ ${reports.take(5).map((r) => '- ${r['date']}: ${r['contractor']} en ${r['section
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
           color: message.isUser
-              ? Colors.blue
+              ? AppColors.primary500
               : Colors.grey[200],
           borderRadius: BorderRadius.circular(16),
         ),

@@ -7,6 +7,20 @@ import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import '../providers/theme_provider.dart';
+
+class PdfAppColors {
+  static final PdfColor primary50 = PdfColor.fromInt(AppColors.primary50.value);
+  static final PdfColor primary100 = PdfColor.fromInt(AppColors.primary100.value);
+  static final PdfColor primary200 = PdfColor.fromInt(AppColors.primary200.value);
+  static final PdfColor primary300 = PdfColor.fromInt(AppColors.primary300.value);
+  static final PdfColor primary400 = PdfColor.fromInt(AppColors.primary400.value);
+  static final PdfColor primary500 = PdfColor.fromInt(AppColors.primary500.value);
+  static final PdfColor primary600 = PdfColor.fromInt(AppColors.primary600.value);
+  static final PdfColor primary700 = PdfColor.fromInt(AppColors.primary700.value);
+  static final PdfColor primary800 = PdfColor.fromInt(AppColors.primary800.value);
+  static final PdfColor primary900 = PdfColor.fromInt(AppColors.primary900.value);
+}
 
 class PDFGeneratorService {
   final DateFormat dateFormat = DateFormat('dd/MM/yyyy HH:mm');
@@ -77,9 +91,9 @@ class PDFGeneratorService {
         children: [
           pw.Text(
             'INFORMACIÓN DEL DIRECTOR DE OBRA',
-            style: pw.TextStyle(font: fontBold, fontSize: 14, color: PdfColors.blue900),
+            style: pw.TextStyle(font: fontBold, fontSize: 14, color: PdfAppColors.primary900),
           ),
-          pw.Divider(color: PdfColors.blue200),
+          pw.Divider(color: PdfAppColors.primary200),
           pw.SizedBox(height: 8),
           pw.Row(
             children: [
@@ -123,7 +137,7 @@ class PDFGeneratorService {
   pw.Widget _buildHeader(Map<String, dynamic> data, pw.Font fontBold) {
     return pw.Container(
       decoration: pw.BoxDecoration(
-        color: PdfColors.blue900,
+        color: PdfAppColors.primary900,
         borderRadius: pw.BorderRadius.circular(8),
       ),
       padding: pw.EdgeInsets.all(20),
@@ -144,7 +158,7 @@ class PDFGeneratorService {
             style: pw.TextStyle(
               font: fontBold,
               fontSize: 16,
-              color: PdfColors.blue100,
+              color: PdfAppColors.primary100,
             ),
           ),
           pw.SizedBox(height: 8),
@@ -152,7 +166,7 @@ class PDFGeneratorService {
             'Análisis con Inteligencia Artificial - Sistema de Seguimiento de Construcción',
             style: pw.TextStyle(
               fontSize: 12,
-              color: PdfColors.blue100,
+              color: PdfAppColors.primary100,
             ),
           ),
         ],
@@ -178,7 +192,7 @@ class PDFGeneratorService {
             'INFORMACIÓN DEL PROYECTO',
             style: pw.TextStyle(font: fontBold, fontSize: 16),
           ),
-          pw.Divider(color: PdfColors.blue),
+          pw.Divider(color: PdfAppColors.primary500),
           pw.SizedBox(height: 8),
           _buildInfoRow('Proyecto:', data['projectName'] ?? 'N/A', font, fontBold),
           _buildInfoRow('Sección:', data['sectionName'] ?? 'N/A', font, fontBold),
@@ -532,7 +546,7 @@ class PDFGeneratorService {
           width: double.infinity,
           padding: pw.EdgeInsets.all(12),
           decoration: pw.BoxDecoration(
-            color: PdfColors.blue50,
+            color: PdfAppColors.primary50,
             borderRadius: pw.BorderRadius.only(
               topLeft: pw.Radius.circular(8),
               topRight: pw.Radius.circular(8),
@@ -547,7 +561,7 @@ class PDFGeneratorService {
           width: double.infinity,
           padding: pw.EdgeInsets.all(16),
           decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: PdfColors.blue200),
+            border: pw.Border.all(color: PdfAppColors.primary200),
             borderRadius: pw.BorderRadius.only(
               bottomLeft: pw.Radius.circular(8),
               bottomRight: pw.Radius.circular(8),
@@ -588,14 +602,14 @@ class PDFGeneratorService {
           'REPORTES DETALLADOS',
           style: pw.TextStyle(font: fontBold, fontSize: 16),
         ),
-        pw.Divider(color: PdfColors.blue),
+        pw.Divider(color: PdfAppColors.primary500),
         pw.SizedBox(height: 10),
         ...reports.map((report) => _buildReportCard(report, font, fontBold)),
         if (hasMore) ...[
           pw.SizedBox(height: 8),
           pw.Text(
             'Se muestran 10 de ${allReports.length} reportes analizados. Genere reportes por sección para más detalle.',
-            style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.blueGrey800),
+            style: pw.TextStyle(font: font, fontSize: 9, color: PdfAppColors.primary800),
           ),
         ]
       ],
@@ -681,7 +695,7 @@ class PDFGeneratorService {
                 pw.Container(
                   padding: pw.EdgeInsets.all(8),
                   decoration: pw.BoxDecoration(
-                    color: PdfColors.blue50,
+                    color: PdfAppColors.primary50,
                     borderRadius: pw.BorderRadius.circular(4),
                   ),
                   child: pw.Column(
@@ -833,7 +847,7 @@ class PDFGeneratorService {
   pw.Widget _buildProjectHeader(Map<String, dynamic> data, pw.Font fontBold) {
     return pw.Container(
       decoration: pw.BoxDecoration(
-        color: PdfColors.blue900,
+        color: PdfAppColors.primary900,
         borderRadius: pw.BorderRadius.circular(8),
       ),
       padding: pw.EdgeInsets.all(24),
@@ -854,14 +868,14 @@ class PDFGeneratorService {
             style: pw.TextStyle(
               font: fontBold,
               fontSize: 14,
-              color: PdfColors.blue200,
+              color: PdfAppColors.primary200,
             ),
           ),
           pw.SizedBox(height: 12),
           pw.Container(
             padding: pw.EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             decoration: pw.BoxDecoration(
-              color: PdfColors.blue800,
+              color: PdfAppColors.primary800,
               borderRadius: pw.BorderRadius.circular(4),
             ),
             child: pw.Text(
@@ -878,7 +892,7 @@ class PDFGeneratorService {
             'Análisis Integral con Inteligencia Artificial - Sistema de Seguimiento de Construcción',
             style: pw.TextStyle(
               fontSize: 12,
-              color: PdfColors.blue100,
+              color: PdfAppColors.primary100,
             ),
           ),
         ],
@@ -982,7 +996,7 @@ class PDFGeneratorService {
                 child: _buildStatBox(
                   '\$${materialsCost.toStringAsFixed(0)}',
                   'Inversión Materiales',
-                  PdfColors.blue,
+                  PdfAppColors.primary500,
                   font,
                   fontBold,
                 ),
@@ -1080,7 +1094,7 @@ class PDFGeneratorService {
             'SEGUIMIENTO DE CRONOGRAMA',
             style: pw.TextStyle(font: fontBold, fontSize: 16),
           ),
-          pw.Divider(color: PdfColors.blue),
+          pw.Divider(color: PdfAppColors.primary500),
           pw.SizedBox(height: 12),
           pw.Row(
             children: [
@@ -1291,7 +1305,7 @@ class PDFGeneratorService {
           pw.Container(
             padding: pw.EdgeInsets.all(10),
             decoration: pw.BoxDecoration(
-              color: PdfColors.blue50,
+              color: PdfAppColors.primary50,
               borderRadius: pw.BorderRadius.circular(6),
             ),
             child: pw.Row(
@@ -1301,7 +1315,7 @@ class PDFGeneratorService {
                   style: pw.TextStyle(
                     font: fontBold,
                     fontSize: 16,
-                    color: PdfColors.blue,
+                    color: PdfAppColors.primary500,
                   ),
                 ),
                 pw.SizedBox(width: 8),
@@ -1332,7 +1346,7 @@ class PDFGeneratorService {
           width: double.infinity,
           padding: pw.EdgeInsets.all(12),
           decoration: pw.BoxDecoration(
-            color: PdfColors.blue50,
+            color: PdfAppColors.primary50,
             borderRadius: pw.BorderRadius.only(
               topLeft: pw.Radius.circular(8),
               topRight: pw.Radius.circular(8),
@@ -1347,7 +1361,7 @@ class PDFGeneratorService {
           width: double.infinity,
           padding: pw.EdgeInsets.all(16),
           decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: PdfColors.blue200),
+            border: pw.Border.all(color: PdfAppColors.primary200),
             borderRadius: pw.BorderRadius.only(
               bottomLeft: pw.Radius.circular(8),
               bottomRight: pw.Radius.circular(8),

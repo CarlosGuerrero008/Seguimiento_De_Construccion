@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Importa Cloud Firestore
 import 'login_screen.dart';
 import 'home_screen.dart';
+import '../providers/theme_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -125,7 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.mark_email_read, size: 50, color: Colors.blue),
+                Icon(Icons.mark_email_read, size: 50, color: AppColors.primary500),
                 SizedBox(height: 20),
                 Text(
                   'Hemos enviado un enlace de verificación a:',

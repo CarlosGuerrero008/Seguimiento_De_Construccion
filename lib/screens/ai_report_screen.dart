@@ -8,6 +8,7 @@ import 'dart:io';
 import '../services/gemini_service.dart';
 import '../services/pdf_generator_service.dart';
 import '../services/document_service.dart';
+import '../providers/theme_provider.dart';
 
 class AIReportScreen extends StatefulWidget {
   final String projectId;
@@ -297,8 +298,8 @@ class _AIReportScreenState extends State<AIReportScreen> {
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: isDark 
-                        ? Colors.blue.withOpacity(0.2) 
-                        : Colors.blue.shade50,
+                        ? AppColors.primary500.withOpacity(0.2) 
+                        : AppColors.primary50,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -333,7 +334,7 @@ class _AIReportScreenState extends State<AIReportScreen> {
             icon: Icon(Icons.copy),
             label: Text('COPIAR REPORTE'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: AppColors.primary500,
               foregroundColor: Colors.white,
               padding: EdgeInsets.symmetric(vertical: 16),
             ),

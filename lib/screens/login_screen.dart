@@ -4,6 +4,7 @@ import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'home_screen.dart';
 import 'invitation_handler_screen.dart';
+import '../providers/theme_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? invitationToken;
@@ -238,7 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                           child: Text(
                             '¿Olvidaste tu contraseña?',
-                            style: TextStyle(color: Colors.blue),
+                            style: TextStyle(color: AppColors.primary500),
                           ),
                         ),
                       ),
@@ -251,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          backgroundColor: Colors.blue.shade800,
+                          backgroundColor: AppColors.primary800,
                         ),
                         child: _isLoading
                             ? SizedBox(
@@ -285,7 +286,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               'Regístrate aquí',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.blue.shade800,
+                                color: AppColors.primary800,
                               ),
                             ),
                           ),

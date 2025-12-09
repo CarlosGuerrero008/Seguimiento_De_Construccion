@@ -8,7 +8,6 @@ import 'dart:typed_data';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import '../widgets/image_service.dart';
 import '../providers/theme_provider.dart';
 import 'login_screen.dart';
@@ -303,27 +302,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-    
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Configuración del Perfil',
-          style: TextStyle(
-            color: isDarkMode ? Colors.white : Colors.black87,
-          ),
-        ),
-        backgroundColor: isDarkMode ? null : Colors.white,
-        iconTheme: IconThemeData(
-          color: isDarkMode ? Colors.white : Colors.black87,
-        ),
-        elevation: 0,
+        title: Text('Configuracion del Perfil'),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: isDarkMode ? Colors.white : Colors.blue,
-          unselectedLabelColor: isDarkMode ? Colors.white70 : Colors.black54,
-          indicatorColor: isDarkMode ? Colors.blue : Colors.blue,
+          labelColor: Colors.white,
+          unselectedLabelColor: AppColors.primary100,
+          indicatorColor: colorScheme.onPrimary,
           tabs: [
             Tab(icon: Icon(Icons.person), text: 'Perfil'),
             Tab(icon: Icon(Icons.lock), text: 'Seguridad'),
@@ -334,17 +322,17 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
       ),
       body: SafeArea(
         child: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildProfileTab(),
-                _buildSecurityTab(),
-                _buildNotificationsTab(),
-                _buildPreferencesTab(),
-              ],
-            ),
-        ),
+            ? Center(child: CircularProgressIndicator())
+            : TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildProfileTab(),
+                  _buildSecurityTab(),
+                  _buildNotificationsTab(),
+                  _buildPreferencesTab(),
+                ],
+              ),
+      ),
     );
   }
 
@@ -375,7 +363,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
                   child: Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.blue,
+                      color: AppColors.primary500,
                       shape: BoxShape.circle,
                       boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
                     ),
@@ -595,7 +583,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
                   ),
                   Divider(),
                   ListTile(
-                    leading: Icon(Icons.smartphone, color: Colors.blue),
+                    leading: Icon(Icons.smartphone, color: AppColors.primary500),
                     title: Text('Dispositivo Actual'),
                     subtitle: Text('Último acceso: Ahora'),
                     trailing: Container(
@@ -790,22 +778,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
             elevation: 2,
             child: Column(
               children: [
-                Consumer<ThemeProvider>(
-                  builder: (context, themeProvider, child) {
-                    return ListTile(
-                      leading: Icon(Icons.brightness_6),
-                      title: Text('Tema'),
-                      subtitle: Text(themeProvider.isDarkMode ? 'Oscuro' : 'Claro'),
-                      trailing: Switch(
-                        value: themeProvider.isDarkMode,
-                        onChanged: (value) {
-                          themeProvider.toggleTheme();
-                        },
-                      ),
-                    );
-                  },
-                ),
-                Divider(height: 1),
                 ListTile(
                   leading: Icon(Icons.language),
                   title: Text('Idioma'),
@@ -968,9 +940,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[400]
-                        : Colors.grey[600],
+                    color: Colors.grey[600],
                   ),
                 ),
                 Text(

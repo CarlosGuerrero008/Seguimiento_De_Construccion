@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
+import '../providers/theme_provider.dart';
 
 class ProjectDashboardScreen extends StatefulWidget {
   final String projectId;
@@ -69,7 +70,7 @@ class _ProjectDashboardScreenState extends State<ProjectDashboardScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.business, color: Colors.blue, size: 28),
+                Icon(Icons.business, color: AppColors.primary500, size: 28),
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -95,7 +96,7 @@ class _ProjectDashboardScreenState extends State<ProjectDashboardScreen> {
                 _buildStatChip(
                   'Total',
                   '$totalDays días',
-                  Colors.blue,
+                  AppColors.primary500,
                   Icons.calendar_today,
                 ),
                 _buildStatChip(
@@ -207,12 +208,8 @@ class _ProjectDashboardScreenState extends State<ProjectDashboardScreen> {
                 '${timeProgress.toStringAsFixed(1)}% del tiempo',
                 style: TextStyle(fontSize: 12, color: Colors.white),
               ),
-              backgroundColor: Colors.grey[300],
-              progressColor: timeProgress < 30
-                  ? Colors.green
-                  : timeProgress < 70
-                      ? Colors.orange
-                      : Colors.red,
+              backgroundColor: AppColors.primary100,
+              progressColor: AppColors.primary600,
               barRadius: Radius.circular(15),
             ),
           ],
@@ -371,7 +368,7 @@ class _ProjectDashboardScreenState extends State<ProjectDashboardScreen> {
                                 ),
                               ],
                             ),
-                            progressColor: Colors.blue,
+                            progressColor: AppColors.primary500,
                             backgroundColor: Theme.of(context).brightness == Brightness.dark
                                 ? Colors.grey[700]!
                                 : Colors.grey[300]!,
@@ -461,7 +458,7 @@ class _ProjectDashboardScreenState extends State<ProjectDashboardScreen> {
                       Icons.description,
                       totalReports.toString(),
                       'Reportes',
-                      Colors.blue,
+                      AppColors.primary500,
                     ),
                     _buildStatColumn(
                       Icons.photo_camera,
@@ -504,14 +501,14 @@ class _ProjectDashboardScreenState extends State<ProjectDashboardScreen> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.2),
+                                color: AppColors.primary500.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 '${entry.value}',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
+                                  color: AppColors.primary500,
                                 ),
                               ),
                             ),
